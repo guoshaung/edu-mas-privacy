@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>零信任隐私保护多智能体学习平台 - 学生学习端</title>
+    <script src="https://cdn.jsdelivr.net/npm/vis-network@9.1.2/dist/vis-network.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-blue: #4a90e2;
+            --light-blue: #7dd3fc;
+            --accent-green: #00d4aa;
+            --accent-orange: #ff6b35;
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --text-primary: #2d3748;
+            --text-secondary: #718096;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Noto Sans SC', sans-serif;
+            color: var(--text-primary);
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* 动态背景 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+            animation: float 6s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+        }
+
+        .content-wrapper {
+            position: relative;
+            z-index: 1;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .navbar {
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.3rem;
+            color: var(--primary-blue);
+        }
+
+        .student-profile {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            animation: slide-up 0.5s ease;
+        }
+
+        @keyframes slide-up {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: var(--bg-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .student-info h3 {
+            margin: 0;
+            color: var(--primary-blue);
+            font-weight: 700;
+        }
+
+        .student-info p {
+            margin: 0;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .learning-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .stat-item {
+            background: rgba(74, 222, 234, 0.1);
+            border-radius: 12px;
+            padding: 1rem;
+            text-align: center;
+            border: 2px solid rgba(74, 222, 234, 0.2);
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-blue);
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 0.3rem;
+        }
+
+        .learning-style-badge {
+            display: inline-block;
+            padding: 0.5rem 1.5rem;
+            background: var(--bg-gradient);
+            color: white;
+            border-radius: 20px;
+            font-weight: 500;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+            animation: pulse-glow 2s infinite;
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3); }
+            50% { box-shadow: 0 5px 25px rgba(102, 126, 234, 0.5); }
+        }
+
+        .main-card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-title {
+            color: var(--primary-blue);
+            font-weight: 700;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+        }
+
+        .card-subtitle {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .chat-container {
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 15px;
+            padding: 1.5rem;
+            height: 400px;
+            overflow-y: auto;
+            margin-bottom: 1rem;
+            border: 2px solid rgba(74, 222, 234, 0.1);
+        }
+
+        .chat-container::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .chat-container::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 10px;
+        }
+
+        .chat-container::-webkit-scrollbar-thumb {
+            background: var(--primary-blue);
+            border-radius: 10px;
+        }
+
+        .chat-message {
+            margin-bottom: 1rem;
+            padding: 1rem 1.25rem;
+            border-radius: 15px;
+            max-width: 85%;
+            animation: message-in 0.3s ease;
+        }
+
+        @keyframes message-in {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chat-ai {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin-right: auto;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .chat-student {
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid rgba(74, 222, 234, 0.2);
+            margin-left: auto;
+        }
+
+        .chat-sender {
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--primary-blue);
+        }
+
+        .input-area {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .chat-input {
+            flex: 1;
+            border-radius: 25px 0 0 25px;
+            padding: 0.8rem 1.2rem;
+            border: 2px solid rgba(74, 222, 234, 0.2);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 20px rgba(74, 222, 234, 0.3);
+        }
+
+        .send-btn {
+            background: var(--bg-gradient);
+            color: white;
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 0.8rem 1rem;
+            border: 2px solid rgba(74, 222, 234, 0.3);
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 12px;
+            color: var(--primary-blue);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-size: 0.9rem;
+        }
+
+        .action-btn:hover {
+            background: var(--bg-gradient);
+            color: white;
+            border-color: transparent;
+            transform: translateY(-2px);
+        }
+
+        .action-btn.active {
+            background: var(--bg-gradient);
+            color: white;
+            border-color: transparent;
+        }
+
+        .resource-card {
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 15px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid var(--accent-green);
+            transition: all 0.3s ease;
+        }
+
+        .resource-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0, 212, 170, 0.2);
+        }
+
+        .resource-type {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+        }
+
+        .resource-title {
+            font-weight: 600;
+            color: var(--primary-blue);
+            margin-bottom: 0.5rem;
+        }
+
+        .resource-meta {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+
+        .progress-section {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .progress-item {
+            margin-bottom: 1rem;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .progress-bar-bg {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            height: 10px;
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--bg-gradient);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        .progress-text {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 0.3rem;
+        }
+
+        .quiz-container {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 1.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .quiz-question {
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid var(--accent-orange);
+        }
+
+        .quiz-question h5 {
+            color: var(--text-primary);
+            margin-bottom: 1rem;
+        }
+
+        .quiz-options {
+            display: grid;
+            gap: 0.5rem;
+        }
+
+        .quiz-option {
+            padding: 0.8rem 1rem;
+            border: 2px solid rgba(74, 222, 234, 0.2);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.8);
+        }
+
+        .quiz-option:hover {
+            background: rgba(74, 222, 234, 0.1);
+            border-color: var(--primary-blue);
+        }
+
+        .quiz-option.selected {
+            background: var(--bg-gradient);
+            color: white;
+            border-color: transparent;
+        }
+
+        .submit-btn {
+            width: 100%;
+            background: var(--bg-gradient);
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .privacy-notice {
+            background: rgba(255, 107, 53, 0.1);
+            border: 2px solid var(--accent-orange);
+            border-radius: 15px;
+            padding: 1rem;
+            margin-top: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .privacy-icon {
+            font-size: 2rem;
+        }
+
+        .privacy-text {
+            flex: 1;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .content-wrapper {
+                padding: 10px;
+            }
+            
+            .learning-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        /* 打字动画效果 */
+        .typing-indicator {
+            display: inline-block;
+            width: 40px;
+            height: 3px;
+            background: var(--primary-blue);
+            border-radius: 3px;
+            animation: typing 1.4s infinite;
+        }
+
+        @keyframes typing {
+            0%, 100% { width: 40px; }
+            50% { width: 20px; }
+        }
+
+        .typing-text::after {
+            content: '...';
+            animation: dots 1.4s infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: '.'; }
+            40% { content: '..'; }
+            60% { content: '...'; }
+            80% { content: ''; }
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .badge-style {
+            background: var(--bg-gradient);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="content-wrapper">
+        <!-- 导航栏 -->
+        <nav class="navbar navbar-expand-lg navbar-light sticky-top">
+            <div class="container">
+                <a class="navbar-brand" href="#">🎓 零信任隐私保护学习平台</a>
+                <div class="navbar-nav ms-auto">
+                    <span class="navbar-text">
+                        <span class="status-online"></span>
+                        学习模式在线
+                    </span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 学生档案 -->
+        <div class="student-profile">
+            <div class="profile-header">
+                <div class="avatar">👨‍🎓</div>
+                <div class="student-info">
+                    <h3>张同学</h3>
+                    <p>初三 · 学习进度跟踪中</p>
+                </div>
+                <div class="learning-style-badge">
+                    👁️ 视觉型学习者
+                </div>
+            </div>
+            <div class="learning-stats">
+                <div class="stat-item">
+                    <div class="stat-value">85%</div>
+                    <div class="stat-label">今日学习度</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">12</div>
+                    <div class="stat-label">已掌握知识点</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">7</div>
+                    <div class="stat-label">待复习</div>
+                </div>
+                <div class="item">
+                    <div class="stat-value">🔒</div>
+                    <div class="stat-label">隐私保护中</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主要功能区域 -->
+        <div class="main-card">
+            <div class="card-title">💬 智能辅导对话</div>
+            <div class="card-subtitle">你的AI学习助手，所有对话都经过隐私保护</div>
+
+            <!-- 快捷操作 -->
+            <div class="quick-actions">
+                <button class="action-btn" onclick="showResources()">📚 查看学习资源</button>
+                <button class="action-btn" onclick="showProgress()">📊 学习进度</button>
+                <button class="action-btn" onclick="startQuiz()">📝 开始测试</button>
+                <button class="action-btn" onclick="showPrivacyInfo()">🔒 了解隐私保护</button>
+            </div>
+
+            <!-- 聊天界面 -->
+            <div class="chat-container" id="chat-box">
+                <div class="chat-message chat-ai">
+                    <div class="chat-sender">🤖 AI辅导老师</div>
+                    <p>你好！我是你的智能辅导老师。我会根据你的学习风格，为你提供个性化的学习帮助。</p>
+                    <p style="margin-top:0.8rem;">有什么不懂的问题可以随时问我，我会用最适合你的方式来讲解！</p>
+                </div>
+            </div>
+
+            <!-- 输入区域 -->
+            <div class="input-area">
+                <input type="text" class="chat-input" id="user-input" placeholder="输入你的问题..." onkeypress="if(event.key==='Enter')sendMessage()">
+                <button class="send-btn" onclick="sendMessage()">发送 📤</button>
+            </div>
+        </div>
+
+        <!-- 资源卡片（默认隐藏） -->
+        <div class="main-card" id="resources-section" style="display:none;">
+            <div class="card-title">📚 个性化学习资源</div>
+            <div class="card-subtitle">根据你的学习风格推荐</div>
+
+            <div id="resource-list">
+                <div class="resource-card">
+                    <div class="resource-type">🎥 视频课程</div>
+                    <div class="resource-title">二次函数图像变换详解</div>
+                    <div class="resource-meta">时长: 10分钟 · 难度: 中等</div>
+                </div>
+                <div class="resource-card">
+                    <div class="resource-type">🎮 互动实验</div>
+                    <div class="resource-title">二次函数图像可视化工具</div>
+                    <div class="resource-meta">互动式 · 难度: 中等</div>
+                </div>
+                <div class="resource-card">
+                    <div class="resource-type">📝 练习题</div>
+                    <div class="resource-title">二次函数专项练习（10题）</div>
+                    <div class="resource-meta">自适应难度</div>
+                </div>
+            </div>
+
+            <button class="submit-btn mt-3" onclick="hideResources()">返回对话 ←</button>
+        </div>
+
+        <!-- 学习进度（默认隐藏） -->
+        <div class="progress-section" id="progress-section" style="display:none;">
+            <div class="card-title">📊 学习进度跟踪</div>
+
+            <div class="progress-item">
+                <div class="progress-label">
+                    <span>二次函数</span>
+                    <span>掌握度: 85%</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" style="width: 85%;"></div>
+                </div>
+                <div class="progress-text">已完成 12/14 个知识点</div>
+            </div>
+
+            <div class="progress-item">
+                <div class="progress-label">
+                    <span>三角函数</span>
+                    <span>掌握度: 45%</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" style="width: 45%;"></div>
+                </div>
+                <div class="progress-text">已完成 5/10 个知识点</div>
+            </div>
+
+            <div class="progress-item">
+                <div class="progress-label">
+                    <span>一元二次不等式</span>
+                    <span>掌握度: 20%</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar-fill" style="width: 20%;"></div>
+                </div>
+                <div class="progress-text">已完成 1/5 个知识点</div>
+            </div>
+
+            <button class="submit-btn mt-3" onclick="hideProgress()">返回对话 ←</button>
+        </div>
+
+        <!-- 测试界面（默认隐藏） -->
+        <div class="quiz-container" id="quiz-section" style="display:none;">
+            <div class="card-title">📝 知识测试</div>
+            <div class="card-subtitle">独立评估系统（不会查看你的对话历史）</div>
+
+            <div id="quiz-content">
+                <p class="text-muted">正在加载测试题...</p>
+            </div>
+
+            <button class="submit-btn" onclick="hideQuiz()">返回对话 ←</button>
+        </div>
+
+        <!-- 隐私说明（默认隐藏） -->
+        <div class="main-card" id="privacy-section" style="display:none;">
+            <div class="card-title">🔒 你的隐私被保护</div>
+            <div class="card-subtitle">零信任隐私保护机制</div>
+
+            <div style="color:var(--text-secondary);line-height:1.8;">
+                <p><strong>🛡️ 数据保护</strong></p>
+                <ul style="margin-left:1.5rem;">
+                    <li>你的原始学习数据存储在本地</li>
+                    <li>所有数据经过SRPG隐空间重构</li>
+li>注入LDP噪声，满足差分隐私</li>
+                </ul>
+
+                <p style="margin-top:1rem;"><strong>🔒 访问控制</strong></p>
+                <ul style="margin-left:1.5rem;">
+                    <li>智能体只能访问授权的数据</li>
+                    <li>临时授权，自动过期</li>
+                    <li>GNN实时监控异常行为</li>
+                </ul>
+
+                <p style="margin-top:1rem;"><strong>🎯 独立评估</strong></p>
+                <ul style="margin-left:1.5rem;">
+                    <li>测试智能体不会查看辅导对话</li>
+                    <li>防止大模型自判幻觉</li>
+                    <li>确保评估公平性</li>
+                </ul>
+            </div>
+
+            <button class="submit-btn mt-3" onclick="hidePrivacy()">返回对话 ←</button>
+        </div>
+
+        <!-- 隐私提示 -->
+        <div class="privacy-notice">
+            <div class="privacy-icon">🔐</div>
+            <div class="privacy-text">
+                <strong>你的学习数据受到零信任隐私保护</strong>
+                原始数据在本地，经过隐私保护后才发送给AI智能体。
+                查看完整隐私说明
+            </div>
+        </div>
+
+        <footer>
+            <p>🔒 零信任隐私保护多智能体学习平台</p>
+            <p>SRPG + LDP + 动态RBAC + GNN拓扑防御</p>
+        </footer>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let studentId = 'student_20240313_001';
+        let learningStyle = 'Visual';
+
+        function addMessage(sender, text, isUser = false) {
+            const chatBox = document.getElementById('chat-box');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${isUser ? 'chat-student' : 'chat-ai'}`;
+
+            const senderName = isUser ? '👤 你' : '🤖 AI老师';
+            
+            messageDiv.innerHTML = `
+                <div class="chat-sender">${senderName}</div>
+                <p style="margin-top:0.5rem;">${text}</p>
+            `;
+
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function addTypingIndicator() {
+            const chatBox = document.getElementById('chat-box');
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'chat-message chat-ai';
+            typingDiv.innerHTML = `
+                <div class="chat-sender">🤖 AI老师</div>
+                <span class="typing-text">正在思考</span>
+                <div class="typing-indicator"></div>
+            `;
+            typingDiv.id = 'typing-indicator';
+            chatBox.appendChild(typingDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function removeTypingIndicator() {
+            const typingDiv = document.getElementById('typing-area');
+            if (typingDiv) typingDiv.remove();
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('user-input');
+            const message = input.value.trim();
+            
+            if (!message) return;
+
+            // 添加用户消息
+            addMessage('学生', message, true);
+            input.value = '';
+
+            // 显示打字动画
+            addTypingIndicator();
+
+            // 模拟AI响应
+            setTimeout(() => {
+                removeTypingIndicator();
+                
+                const responses = {
+                    'Visual': [
+                        '试着用图像来理解这个概念会更容易哦！',
+                        '可以画个图来看看这个函数的变化规律',
+                        '我给你画个示意图帮助理解'
+                    ],
+                    'Aural': [
+                        '我给你详细讲解一遍',
+                        '可以试着口头解释给老师听',
+                        '听听这个知识点的音频课程'
+                    ],
+                    'ReadWrite': [
+                        '把这个概念写成笔记会更好理解',
+                        '试试总结一下关键点',
+                        '阅读教材上的相关章节'
+                    ],
+                    'Kinesthetic': [
+                        '动手实践一下会更清楚',
+                        '用实物模型来帮助理解',
+                        '做个小实验验证一下'
+                    ]
+                };
+
+                const response = responses[learningStyle][Math.floor(Math.random() * 3)];
+                addMessage('AI老师', response);
+            }, 1500);
+        }
+
+        function showResources() {
+            document.getElementById('resources-section').style.display = 'block';
+            document.querySelector('.main-card').style.display = 'none';
+            document.querySelector('.progress-section').style.display = 'none';
+            document.querySelector('.quiz-container').style.display = 'none';
+            document.querySelector('#privacy-section').style.display = 'none';
+        }
+
+        function hideResources() {
+            document.getElementById('resources-section').style.display = 'none';
+            document.querySelector('.main-card').style.display = 'block';
+        }
+
+        function showProgress() {
+            document.getElementById('progress-section').style.display = 'block';
+            document.getElementById('resources-section').style.display = 'none';
+            document.querySelector('.main-card').style.display = 'none';
+            document.querySelector('.quiz-container').style.display = 'none';
+            document.querySelector('#privacy-section').style.display = 'none';
+        }
+
+        function hideProgress() {
+            document.getElementById('progress-section').style.display = 'none';
+            document.querySelector('.main-card').style.display = 'block';
+        }
+
+        function startQuiz() {
+            document.getElementById('quiz-section').style.display = 'block';
+            document.getElementById('resources-section').style.display = 'none';
+            document.querySelector('.main-card').style.display = 'none';
+            document.querySelector('.progress-section').style.display = 'none';
+            document.querySelector('#privacy-section').style.display = 'none';
+
+            // 加载测试题
+            document.getElementById('quiz-content').innerHTML = `
+                <div class="quiz-question">
+                    <h5>问题 1/3</h5>
+                    <p>二次函数 y = x² - 4x + 3 的顶点坐标是？</p>
+                    <div class="quiz-options">
+                        <div class="quiz-option" onclick="selectOption(this, 'A')">(A) (2, -1)</div>
+                        <div class="quiz-option" onclick="selectOption(this, 'B)">(B) (2, 1)</div>
+                        <div class="quiz-option" onclick="selectOption(this, 'C)">(C) (-2, -1)</div>
+                        <div class="quiz-option" onclick="selectOption(this, 'D)">(D) (2, 1)</div>
+                    </div>
+                </div>
+                <div class="quiz-question" style="display:none;">
+                    <h5>问题 2/3</h5>
+                    <p>抛物线 y = -x² + 2x + 3 的开口方向是？</p>
+                    <div class="quiz-options">
+                        <div class="quiz-option" onclick="selectOption(this, 'A')">(A) 向上</div>
+                        <div class="quiz-option" onclick="selectOption(this, 'B)">(B) 向下</div>
+                        <div class="quiz-option" onclick="selectOption(this, 'C)">(C) 向左</div>
+                        <div class="quiz-option" onclick="selectOption(this, 'D)">(D) 向右</div>
+                    </div>
+                </div>
+                <div class="quiz-question" style="display:none;">
+                    <h5>问题 3/3</h5>
+                    <p>如何判断二次函数的图像与x轴的交点个数？</h5>
+                    <p class="text-muted">提示：使用判别式 Δ > 0</p>
+                </div>
+                <button class="submit-btn" style="margin-top:1rem;" onclick="submitQuiz()">提交答案</button>
+            `;
+        }
+
+        function hideQuiz() {
+            document.getElementById('quiz-section').style.display = 'none';
+            document.querySelector('.main-card').style.display = 'block';
+        }
+
+        function showPrivacyInfo() {
+            document.getElementById('privacy-section').style.display = 'block';
+            document.getElementById('resources-section').style.display = 'none';
+            document.querySelector('.main-card').style.display = 'none';
+            document.querySelector('.progress-section').style.display = 'none';
+            document.querySelector('.quiz-container').style.display = 'none';
+        }
+
+        function hidePrivacy() {
+            document.getElementById('privacy-section').style.display = 'none';
+            document.querySelector('.main-card').style.display = 'block';
+        }
+
+        function selectOption(element, answer) {
+            // 清除其他选项
+            const options = element.parentElement.querySelectorAll('.quiz-option');
+            options.forEach(opt => opt.classList.remove('selected'));
+            
+            // 选中当前选项
+            element.classList.add('selected');
+        }
+
+        function submitQuiz() {
+            addMessage('AI老师', '✅ 测试已收到！答案提交后会由独立的评估系统（AG5）进行评分，不会查看我们的对话历史，确保评估的公平性。');
+            hideQuiz();
+        }
+
+        // 键盘快捷键
+        document.getElementById('user-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>

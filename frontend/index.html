@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>零信任隐私保护多智能体学习平台</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vis-network@9.1.2/dist/vis-network.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vis-network@9.1.2/dist/vis-network.min.css">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --bg-dark: #1a1a2e;
+            --bg-card: #16213e;
+            --text-light: #ecf0f1;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--bg-dark) 0%, #0f3460 100%);
+            color: var(--text-light);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background: rgba(26, 26, 46, 0.95) !important;
+            backdrop-filter: blur(10px);
+            border-bottom: 2px solid var(--accent-color);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            background: linear-gradient(45deg, var(--accent-color), #9b59b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid rgba(52, 152, 219, 0.3);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(52, 152, 219, 0.2);
+        }
+
+        .card-header {
+            background: rgba(52, 152, 219, 0.1);
+            border-bottom: 1px solid rgba(52, 152, 219, 0.3);
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .metric-card {
+            text-align: center;
+            padding: 1.5rem;
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, var(--accent-color), #9b59b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .metric-label {
+            color: #95a5a6;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        #network-container {
+            height: 400px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+        }
+
+        .privacy-bar {
+            height: 30px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .privacy-used {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success-color), var(--warning-color));
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+
+        .log-container {
+            height: 300px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+        }
+
+        .log-entry {
+            margin-bottom: 0.5rem;
+            padding: 0.5rem;
+            border-left: 3px solid var(--accent-color);
+            background: rgba(52, 152, 219, 0.05);
+        }
+
+        .log-error {
+            border-left-color: var(--danger-color);
+            background: rgba(231, 76, 60, 0.1);
+        }
+
+        .log-success {
+            border-left-color: var(--success-color);
+        }
+
+        .btn-glow {
+            background: linear-gradient(45deg, var(--accent-color), #9b59b6);
+            border: none;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-glow:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(52, 152, 219, 0.4);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        .status-online {
+            background: var(--success-color);
+        }
+
+        .status-offline {
+            background: var(--danger-color);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .agent-card {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .agent-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-color), #9b59b6);
+        }
+
+        .chart-container {
+            height: 250px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 2rem;
+            color: #95a5a6;
+            border-top: 1px solid rgba(52, 152, 219, 0.2);
+            margin-top: 3rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">🔒 EduMAS Privacy Platform</a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3">
+                    <span class="status-indicator status-online"></span>
+                    系统在线
+                </span>
+                <button class="btn btn-sm btn-outline-light" onclick="refreshDashboard()">
+                    🔄 刷新
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-5">
+        <!-- 核心指标 -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <div class="metric-value" id="total-requests">0</div>
+                    <div class="metric-label">总请求数</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <div class="metric-value" id="privacy-budget">0%</div>
+                    <div class="metric-label">隐私预算使用</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <div class="metric-value" id="anomaly-count">0</div>
+                    <div class="metric-label">GNN检测异常</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card metric-card">
+                    <div class="metric-value" id="active-agents">5</div>
+                    <div class="metric-label">活跃智能体</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主面板 -->
+        <div class="row">
+            <!-- 左侧：智能体状态 -->
+            <div class="col-lg-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        🤖 智能体状态
+                    </div>
+                    <div class="card-body">
+                        <div id="agent-list">
+                            <div class="agent-card mb-3 p-3">
+                                <h6>A1 - 学生档案（学习者域）</h6>
+                                <div class="text-muted small">高信任域 | 原始数据存储</div>
+                            </div>
+                            <div class="agent-card mb-3 p-3">
+                                <h6>AG2 - 学习风格识别</h6>
+                                <div class="text-muted small">教学域 | VARK模型分析</div>
+                            </div>
+                            <div class="agent-card mb-3 p-3">
+                                <h6>AG3 - 自适应辅导</h6>
+                                <div class="text-muted small">教学域 | 脚手架对话</div>
+                            </div>
+                            <div class="agent-card mb-3 p-3">
+                                <h6>AG4 - 内容挖掘</h6>
+                                <div class="text-muted small">教学域 | RAG资源检索</div>
+                            </div>
+                            <div class="agent-card mb-3 p-3">
+                                <h6>AG5 - 自适应评估</h6>
+                                <div class="text-muted small">教学域 | 独立考官</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 中间：拓扑图 -->
+            <div class="col-lg-5 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        🌐 GNN拓扑监控
+                    </div>
+                    <div class="card-body">
+                        <div id="network-container"></div>
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <span class="badge bg-success">●</span> 正常
+                                <span class="badge bg-danger ms-2">●</span> 被隔离
+                                <span class="badge bg-warning ms-2">●</span> 异常
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧：隐私预算 -->
+            <div class="col-lg-3 mb-4">
+                <div class="card h-100">
+                    <div class="card-header">
+                        📊 隐私预算追踪
+                    </div>
+                    <div class="card-body">
+                        <h6 class="mb-3">LDP隐私预算消耗</h6>
+                        <div class="privacy-bar mb-2">
+                            <div class="privacy-used" id="privacy-bar" style="width: 15%">
+                                15%
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between text-muted small mb-4">
+                            <span>已用: ε=0.30</span>
+                            <span>总计: ε=2.00</span>
+                        </div>
+
+                        <h6 class="mb-3">RBAC权限状态</h6>
+                        <canvas id="rbacChart" class="chart-container"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部：日志监控 -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>📝 实时日志监控</span>
+                        <button class="btn btn-sm btn-glow" onclick="simulateRequest()">
+                            模拟请求
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="log-container" id="log-container">
+                            <div class="log-entry">
+                                <span class="text-muted">[2026-03-13 22:30:00]</span>
+                                <span class="text-success">✓</span>
+                                系统初始化完成
+                            </div>
+                            <div class="log-entry">
+                                <span class="text-muted">[2026-03-13 22:30:05]</span>
+                                <span class="text-success">✓</span>
+                                隐私网关启动成功 | 控制平面域
+                            </div>
+                            <div class="log-entry">
+                                <span class="text-muted">[2026-03-13 22:30:10]</span>
+                                <span class="text-success">✓</span>
+                                教学域智能体集群就绪 | 4个智能体
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>🔒 零信任隐私保护多智能体学习平台 | MVP Demo</p>
+        <p class="small">SRPG + LDP + 动态RBAC + GNN拓扑防御</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 拓扑图数据
+        const nodes = new vis.DataSet([
+            {id: 1, label: 'A1\n(学生档案)', group: 'learner'},
+            {id: 2, label: 'Gateway\n(隐私网关)', group: 'gateway'},
+            {id: 3, label: 'AG2\n(学习风格)', group: 'education'},
+            {id: 4, label: 'AG3\n(辅导)', group: 'education'},
+            {id: 5, label: 'AG4\n(内容)', group: 'education'},
+            {id: 6, label: 'AG5\n(评估)', group: 'education'}
+        ]);
+
+        const edges = new vis.DataSet([
+            {from: 1, to: 2, label: '原始数据'},
+            {from: 2, to: 3, label: '保护特征'},
+            {from: 2, to: 4, label: '授权访问'},
+            {from: 2, to: 5, label: '知识查询'},
+            {from: 2, to: 6, label: '测试数据'}
+        ]);
+
+        const container = document.getElementById('network-container');
+        const data = {nodes: nodes, edges: edges};
+        const options = {
+            nodes: {
+                shape: 'box',
+                font: {color: '#ecf0f1', size: 14},
+                color: {
+                    background: '#16213e',
+                    border: '#3498db',
+                    highlight: '#3498db'
+                }
+            },
+            edges: {
+                color: {color: '#3498db', highlight: '#9b59b6'},
+                font: {color: '#ecf0f1', size: 12},
+                arrows: {to: true}
+            },
+            groups: {
+                learner: {color: {background: '#27ae60', border: '#2ecc71'}},
+                gateway: {color: {background: '#f39c12', border: '#f1c40f'}},
+                education: {color: {background: '#3498db', border: '#2980b9'}}
+            },
+            physics: {
+                enabled: true,
+                barnesHut: {gravitationalConstant: -3000}
+            }
+        };
+
+        const network = new vis.Network(container, data, options);
+
+        // RBAC权限图表
+        const rbacCtx = document.getElementById('rbacChart').getContext('2d');
+        new Chart(rbacCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['活跃权限', '已吊销', '待审批'],
+                datasets: [{
+                    data: [3, 2, 1],
+                    backgroundColor: ['#27ae60', '#e74c3c', '#f39c12'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {color: '#ecf0f1', font: {size: 11}}
+                    }
+                }
+            }
+        });
+
+        // 模拟请求
+        function simulateRequest() {
+            const logContainer = document.getElementById('log-container');
+            const timestamp = new Date().toLocaleString('zh-CN');
+
+            const logs = [
+                {
+                    type: 'success',
+                    msg: '收到学习者数据 | student_id: stu_20240313_001'
+                },
+                {
+                    type: 'success',
+                    msg: 'SRPG保护完成 | 注入LDP噪声 | 消耗ε=0.10'
+                },
+                {
+                    type: 'success',
+                    msg: 'RBAC授权 | AG2获得临时令牌 | TTL=300s'
+                },
+                {
+                    type: 'success',
+                    msg: 'GNN检查 | 拓扑正常 | 无异常节点'
+                },
+                {
+                    type: 'success',
+                    msg: 'AG2分析完成 | 学习风格: Visual | 置信度: 85%'
+                }
+            ];
+
+            let delay = 0;
+            logs.forEach((log, index) => {
+                setTimeout(() => {
+                    const entry = document.createElement('div');
+                    entry.className = `log-entry ${log.type === 'error' ? 'log-error' : 'log-success'}`;
+                    entry.innerHTML = `
+                        <span class="text-muted">[${timestamp}]</span>
+                        <span class="text-${log.type === 'error' ? 'danger' : 'success'}">
+                            ${log.type === 'error' ? '✗' : '✓'}
+                        </span>
+                        ${log.msg}
+                    `;
+                    logContainer.insertBefore(entry, logContainer.firstChild);
+
+                    // 更新指标
+                    if (index === logs.length - 1) {
+                        const totalEl = document.getElementById('total-requests');
+                        totalEl.textContent = parseInt(totalEl.textContent) + 1;
+
+                        const privacyEl = document.getElementById('privacy-budget');
+                        const currentUsed = parseInt(privacyEl.textContent);
+                        privacyEl.textContent = (currentUsed + 5) + '%';
+
+                        const barEl = document.getElementById('privacy-bar');
+                        barEl.style.width = (currentUsed + 5) + '%';
+                        barEl.textContent = (currentUsed + 5) + '%';
+                    }
+                }, delay);
+                delay += 500;
+            });
+        }
+
+        // 刷新仪表盘
+        function refreshDashboard() {
+            location.reload();
+        }
+
+        // 定期更新（模拟实时数据）
+        setInterval(() => {
+            const anomalyEl = document.getElementById('anomaly-count');
+            if (Math.random() > 0.9) {
+                anomalyEl.textContent = parseInt(anomalyEl.textContent) + 1;
+                anomalyEl.style.color = '#e74c3c';
+            }
+        }, 5000);
+    </script>
+</body>
+</html>

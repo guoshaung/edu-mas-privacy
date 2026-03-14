@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>教师管理端 - 零信任隐私保护多智能体学习平台</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vis-network@9.1.2/dist/vis-network.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/vis-network@9.1.2/dist/vis-network.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --neon-cyan: #00f3ff;
+            --neon-magenta: #ff00ff;
+            --neon-green: #00ff9f;
+            --cyber-dark: #050508;
+            --cyber-purple: #1a0a2e;
+            --neon-orange: #ff6b35;
+            --neon-yellow: #ffeb3b;
+        }
+
+        body {
+            background: var(--cyber-dark);
+            color: var(--neon-cyan);
+            font-family: 'Orbitron', sans-serif;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, var(--neon-cyan), transparent);
+            animation: scan 2s linear infinite;
+            z-index: 9999;
+            box-shadow: 0 0 20px var(--neon-cyan);
+        }
+
+        @keyframes scan {
+            0% { top: 0; }
+            100% { top: 100%; }
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: linear-gradient(rgba(0, 243, 255, 0.1) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(0, 243, 255, 0.1) 1px, transparent 1px);
+            background-size: 40px 40px;
+            animation: grid-scroll 20s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes grid-scroll {
+            0% { background-position: 0 0; }
+            100% { background-position: 40px 40px; }
+        }
+
+        .content-wrapper {
+            position: relative;
+            z-index: 1;
+        }
+
+        .navbar {
+            background: rgba(5, 5, 8, 0.95) !important;
+            border-bottom: 2px solid var(--neon-cyan);
+            box-shadow: 0 0 30px rgba(0, 243, 255, 0.5);
+        }
+
+        .navbar-brand {
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 10px var(--neon-cyan), 0 0 20px var(--neon-cyan);
+            letter-spacing: 2px;
+        }
+
+        .container {
+            max-width: 1400px;
+        }
+
+        .card {
+            background: rgba(26, 26, 46, 0.8);
+            border: 2px solid var(--neon-cyan);
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.3), inset 0 0 30px rgba(0, 243, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            margin-bottom: 1.5rem;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: -2px;
+            right: -2px;
+            bottom: -2px;
+            background: linear-gradient(45deg, var(--neon-cyan), transparent, var(--neon-magenta), transparent, var(--neon-cyan));
+            z-index: -1;
+            animation: border-rotate 3s linear infinite;
+        }
+
+        @keyframes border-rotate {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
+        }
+
+        .card-header {
+            background: rgba(0, 243, 255, 0.1);
+            border-bottom: 1px solid var(--neon-cyan);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-body {
+            position: relative;
+            z-index: 1;
+        }
+
+        .btn-cyber {
+            background: linear-gradient(135deg, var(--neon-cyan), var(--neon-magenta));
+            border: none;
+            color: white;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 700;
+            padding: 0.8rem 2rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.5);
+            text-decoration: none;
+            display: inline-block;
+            border-radius: 5px;
+        }
+
+        .btn-cyber:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 40px rgba(0, 243, 255, 0.8);
+            text-decoration: none;
+        }
+
+        .btn-cyber-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+        }
+
+        .form-control {
+            background: rgba(10, 10, 20, 0.8);
+            border: 2px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+            font-size: 0.9rem;
+        }
+
+        .form-control:focus {
+            background: rgba(26, 26, 46, 0.8);
+            border-color: var(--neon-magenta);
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
+            color: var(--neon-cyan);
+        }
+
+        .form-select {
+            background: rgba(10, 10, 20, 0.8);
+            border: 2px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+        }
+
+        #network-container {
+            height: 350px;
+            background: var(--cyber-dark);
+            border: 2px solid var(--neon-cyan);
+            box-shadow: inset 0 0 30px rgba(0, 243, 255, 0.2);
+        }
+
+        .cyber-log {
+            height: 250px;
+            overflow-y: auto;
+            background: var(--cyber-dark);
+            border: 2px solid var(--neon-cyan);
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+        }
+
+        .cyber-log::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .cyber-log::-webkit-scrollbar-track {
+            background: var(--cyber-dark);
+        }
+
+        .cyber-log::-webkit-scrollbar-thumb {
+            background: var(--neon-cyan);
+            box-shadow: 0 0 10px var(--neon-cyan);
+        }
+
+        .log-entry {
+            margin-bottom: 0.5rem;
+            padding: 0.75rem;
+            border-left: 3px solid var(--neon-cyan);
+            background: rgba(0, 243, 255, 0.05);
+            animation: slide-in 0.3s ease;
+            font-size: 0.85rem;
+        }
+
+        @keyframes slide-in {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .chat-container {
+            height: 300px;
+            overflow-y: auto;
+            background: var(--cyber-dark);
+            border: 2px solid var(--neon-cyan);
+            padding: 1rem;
+        }
+
+        .chat-message {
+            margin-bottom: 1rem;
+            padding: 0.8rem 1rem;
+            border: 2px solid var(--neon-cyan);
+            max-width: 85%;
+        }
+
+        .chat-user {
+            background: linear-gradient(135deg, rgba(0, 243, 255, 0.2), rgba(255, 0, 255, 0.2));
+            margin-left: auto;
+            border-color: var(--neon-magenta);
+        }
+
+        .chat-agent {
+            background: rgba(0, 243, 255, 0.1);
+            border-color: var(--neon-cyan);
+        }
+
+        .nav-tabs .nav-link {
+            color: var(--neon-cyan);
+            border: none;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .nav-tabs .nav-link.active {
+            background: transparent;
+            color: var(--neon-cyan);
+            border-bottom: 3px solid var(--neon-cyan);
+            text-shadow: 0 0 10px var(--neon-cyan);
+        }
+
+        .nav-tabs .nav-link:hover {
+            color: var(--neon-magenta);
+            text-shadow: 0 0 10px var(--neon-magenta);
+        }
+
+        .table-cyber {
+            width: 100%;
+            color: var(--neon-cyan);
+            font-size: 0.85rem;
+        }
+
+        .table-cyber thead {
+            border-bottom: 2px solid var(--neon-cyan);
+        }
+
+        .table-cyber td, .table-cyber th {
+            padding: 0.75rem;
+            border: none;
+        }
+
+        .table-cyber tbody tr:hover {
+            background: rgba(0, 243, 255, 0.05);
+        }
+
+        .badge-cyber {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-success { background: var(--neon-green); color: var(--cyber-dark); }
+        .badge-warning { background: var(--neon-orange); color: var(--cyber-dark); }
+        .badge-error { background: var(--neon-magenta); color: white; }
+
+        .footer {
+            text-align: center;
+            padding: 2rem;
+            border-top: 2px solid var(--neon-cyan);
+            background: var(--cyber-dark);
+            box-shadow: 0 -2px 20px rgba(0, 243, 255, 0.3);
+            color: var(--neon-cyan);
+            font-size: 0.9rem;
+        }
+
+        .status-online {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--neon-green);
+            margin-right: 8px;
+            box-shadow: 0 0 10px var(--neon-green);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.2); }
+        }
+    </style>
+</head>
+<body>
+    <div class="content-wrapper">
+        <nav class="navbar navbar-expand-lg navbar-dark sticky-top">
+            <div class="container">
+                <a class="navbar-brand" href="#">🔒 零信任隐私保护多智能体学习平台 - 教师管理端</a>
+                <div class="navbar-nav ms-auto">
+                    <span class="navbar-text">
+                        <span class="status-online"></span>
+                        <strong>系统在线</strong>
+                    </span>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container my-5">
+            <!-- 顶部统计 -->
+            <div class="row mb-4">
+                <div class="col-md-2">
+                    <div class="card text-center p-3">
+                        <div style="font-size:1.8rem;font-weight:900;color:var(--neon-cyan);text-shadow:0 0 10px var(--neon-cyan);">25</div>
+                        <div style="color:var(--neon-magenta);font-size:0.75rem;margin-top:0.5rem;letter-spacing:1px;">在线学生</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card text-center p-3">
+                        <div style="font-size:1.8rem;font-weight:900;color:var(--neon-green);text-shadow:0 0 10px var(--neon-green);">1,234</div>
+                        <div style="color:var(--neon-magenta);font-size:0.75rem;margin-top:0.5rem;letter-spacing:1px;">总对话数</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card text-center p-3">
+                        <div style="font-size:1.8rem;font-weight:900;color:var(--neon-yellow);text-shadow:0 0 10px var(--neon-yellow);">85%</div>
+                        <div style="color:var(--neon-magenta);font-size:0.75rem;margin-top:0.5rem;letter-spacing:1px;">平均正确率</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="card text-center p-3">
+                        <div style="font-size:1.8rem;font-weight:900;color:var(--neon-cyan);text-shadow:0 0 10px var(--neon-cyan);">45%</div>
+                        <div style="color:var(--neon-magenta);font-size:0.75rem;margin-top:0.5rem;letter-spacing:1px;">隐私预算使用</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- 左侧：学生列表 -->
+                <div class="col-lg-4 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            👨‍🎓 学生管理
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <input type="text" class="form-control" placeholder="🔍 搜索学生..." id="student-search" oninput="filterStudents()">
+                            </div>
+                            <div id="student-list" style="max-height:400px;overflow-y:auto;">
+                                <!-- 学生列表会动态加载 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 中间：学生详情 -->
+                <div class="col-lg-8 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            📊 学生详情与实时监控
+                        </div>
+                        <div class="card-body">
+                            <div id="student-detail">
+                                <p class="text-center" style="color:var(--text-secondary);">选择左侧学生查看详情</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- 底部：系统监控 -->
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            🌐 GNN实时拓扑监控 + 系统日志
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-lg-6">
+                                    <div id="network-container"></div>
+                                </div>
+                                <div class="col-lg-6">
+                                    <div class="cyber-log" id="log-container">
+                                        <div class="log-entry">
+                                            <span style="color:var(--neon-green);">●</span> 教师端系统初始化完成
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>🔒 零信任隐私保护多智能体学习平台 | 教师管理端</p>
+        <p style="font-size:0.8rem;">SRPG + LDP + 动态RBAC + GNN拓扑防御</p>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="api.js"></script>
+    <script>
+        // 模拟学生数据
+        let students = [];
+        let backendAvailable = false;
+        let messageUpdateInterval = null;
+
+        // 初始化
+        async function init() {
+            backendAvailable = await checkBackendHealth();
+
+            if (backendAvailable) {
+                console.log('✅ 后端服务已连接');
+                addLog('教师端已连接到智能辅导系统');
+                // 加载真实的学生数据
+                await loadStudentsFromBackend();
+                // 启动实时更新
+                startRealTimeUpdates();
+            } else {
+                console.log('⚠️ 使用离线模式');
+                addLog('当前使用离线模式，显示模拟数据');
+                // 使用模拟数据
+                students = getMockStudents();
+                loadStudents();
+            }
+        }
+
+        // 从后端加载学生数据
+        async function loadStudentsFromBackend() {
+            try {
+                const data = await getAllStudents();
+                if (data && Array.isArray(data)) {
+                    students = data;
+                    loadStudents();
+                    addLog(`成功加载 ${students.length} 名学生数据`);
+                }
+            } catch (error) {
+                console.error('加载学生数据失败:', error);
+                addLog('加载学生数据失败，使用模拟数据');
+                students = getMockStudents();
+                loadStudents();
+            }
+        }
+
+        // 启动实时更新
+        function startRealTimeUpdates() {
+            if (messageUpdateInterval) {
+                clearInterval(messageUpdateInterval);
+            }
+
+            // 每5秒检查一次新消息
+            messageUpdateInterval = setInterval(async () => {
+                await checkForNewMessages();
+            }, 5000);
+
+            addLog('实时消息监控已启动');
+        }
+
+        // 检查新消息
+        async function checkForNewMessages() {
+            try {
+                // 这里应该调用后端API获取新消息
+                // const response = await fetch(`${API_CONFIG.restApiUrl}/teacher/messages/new`);
+                // const newMessages = await response.json();
+
+                // 模拟：随机显示新消息
+                if (Math.random() > 0.7) {  // 30%概率有新消息
+                    const randomStudent = students[Math.floor(Math.random() * students.length)];
+                    const messages = [
+                        `老师，我刚才问了一个关于二次函数的问题`,
+                        `我正在学习三角函数，需要帮助`,
+                        `我完成了一道练习题，想检查对错`,
+                        `能不能给我推荐一些学习资源？`
+                    ];
+                    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+
+                    addLog(`📩 收到新消息来自 ${randomStudent.name}: "${randomMessage}"`);
+                    showNotification(`${randomStudent.name} 发来新消息`);
+                }
+            } catch (error) {
+                console.error('检查新消息失败:', error);
+            }
+        }
+
+        // 显示通知
+        function showNotification(message) {
+            // 使用浏览器通知API
+            if ('Notification' in window && Notification.permission === 'granted') {
+                new Notification('新学生消息', {
+                    body: message,
+                    icon: '/favicon.ico'
+                });
+            }
+
+            // 在页面内显示通知
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 80px;
+                right: 20px;
+                background: rgba(0, 243, 255, 0.9);
+                color: #050508;
+                padding: 1rem 1.5rem;
+                border-radius: 10px;
+                box-shadow: 0 0 20px rgba(0, 243, 255, 0.5);
+                z-index: 10000;
+                animation: slideIn 0.3s ease;
+            `;
+            notification.innerHTML = `
+                <div style="font-weight: 700; margin-bottom: 0.5rem;">🔔 新消息</div>
+                <div>${message}</div>
+            `;
+            document.body.appendChild(notification);
+
+            // 5秒后自动移除
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 5000);
+        }
+
+        // 加载学生列表
+        function loadStudents() {
+            const container = document.getElementById('student-list');
+            container.innerHTML = students.map(s => `
+                <div class="card mb-2 p-3 student-card" data-id="${s.id}" onclick="showStudentDetail('${s.id}')" 
+                     style="cursor:pointer;transition:all 0.3s ease;border:2px solid var(--neon-cyan);">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <div>
+                            <div style="font-weight:700;color:var(--neon-cyan);">${s.name}</div>
+                            <small style="color:var(--neon-magenta);">${s.grade}年级</small>
+                        </div>
+                        <div class="badge-cyber badge-success">${s.style}</div>
+                    </div>
+                    <div style="margin-top:0.5rem;">
+                        <small style="color:var(--text-secondary);">
+                            掌握度: ${s.progress}% | 薄弱点: ${s.weak_points.join(', ') || '无'} | 最后活跃: ${s.last_active}
+                        </small>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function filterStudents() {
+            const search = document.getElementById('student-search').value.toLowerCase();
+            const cards = document.querySelectorAll('.student-card');
+            
+            cards.forEach(card => {
+                const name = card.querySelector('div').textContent.toLowerCase();
+                if (name.includes(search)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = search === '' ? 'block' : 'none';
+                }
+            });
+        }
+
+        function showStudentDetail(studentId) {
+            const student = students.find(s => s.id === studentId);
+            
+            const styleEmojis = {
+                'Visual': '👁️',
+                'Aural': '👂',
+                'ReadWrite': '📖',
+                'Kinesthetic': '🙌'
+            };
+
+            const styleNames = {
+                'Visual': '视觉型',
+                'Aural': '听觉型',
+                'ReadWrite': '读写型',
+                'Kinnesthetic': '动觉型'
+            };
+
+            const styleColors = {
+                'Visual': '#00f3ff',
+                'Aural': '#ff00ff',
+                'ReadWrite': '#00ff9f',
+                'Kinesthetic': '#ff6b35'
+            };
+
+            document.getElementById('student-detail').innerHTML = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5 style="color:var(--neon-cyan);">👤 学生档案</h5>
+                        <table class="table-cyber">
+                            <tr>
+                                <td><strong>姓名:</strong></td>
+                                <td>${student.name}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>年级:</strong></td>
+                                <td>${student.grade}年级</td>
+                            </tr>
+                            <tr>
+                                <td><strong>学习风格:</strong></td>
+                                <td>${styleEmojis[student.style]} ${styleNames[student.style]}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>当前掌握度:</strong></td>
+                                <td>
+                                    <div style="background:rgba(0,243,255,0.1);height:20px;border-radius:10px;overflow:hidden;">
+                                        <div style="width:${student.progress}%;height:100%;background:linear-gradient(90deg, var(--neon-cyan), var(--neon-green));"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>薄弱点:</strong></td>
+td>
+                                <td style="color:var(--neon-orange);">${student.weak_points.join(', ') || '暂无'}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h5 style="color:var(--neon-cyan);">📊 学习进度</h5>
+                        <div class="mb-3">
+                            <small class="text-muted">二次函数 (85%)</small>
+                            <div style="background:rgba(0,243,255,0.1);height:15px;border-radius:10px;overflow:hidden;margin-top:0.5rem;">
+                                <div style="width:85%;height:100%;background:linear-gradient(90deg, var(--neon-cyan), var(--neon-green));"></div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <small class="text-muted">三角函数 (45%)</small>
+                            <div style="background:rgba(0,243,255,0.1);height:15px;border-radius:10px;overflow:hidden;margin-top:0.5rem;">
+                                <div style="width:45%;height:100%;background:linear-gradient(90deg, var(--neon-cyan), var(--neon-magenta));"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <small class="text-muted">一元二次不等式 (20%)</small>
+                            <div style="background:rgba(0,243,255,0.1);height:15px;border-radius:10px;overflow:hidden;margin-top:0.5rem;">
+                                <div style="width:20%;height:100%;background:linear-gradient(90deg, var(--neon-orange), var(--neon-cyan));"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <div class="d-flex gap-2 flex-wrap">
+                            <button class="btn btn-cyber btn-sm" onclick="viewLearningPath('${student.id}')">
+                                📚 查看学习路径
+                            </button>
+                            <button class="btn btn-cyber btn-sm" onclick="generateTestForStudent('${student.id}')">
+                                📝 为学生生成测试
+                            </button>
+                            <button class="btn btn-cyber btn-sm" onclick="sendNotification('${student.id}')">
+                                🔔 发送学习提醒
+                            </button>
+                            <button class="btn btn-cyber btn-sm" onclick="exportProgress('${student.id}')">
+                                📊 导出学习报告
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6 style="color:var(--neon-cyan);margin-bottom:1rem;">💬 最近对话记录</h6>
+                        <div class="chat-container" style="height:200px;" id="student-chat-history">
+                            <div class="chat-message chat-agent">
+                                <strong>AI老师:</strong>
+                                "我正在讲解二次函数顶点公式，你能理解这个公式的几何意义吗？"
+                            </div>
+                            <div class="chat-message chat-user">
+                                <strong>张同学:</strong>
+                                "老师，我用图像法来理解这个公式会更容易些！"
+                            </div>
+                            <div class="chat-message chat-agent">
+                                <strong>AI老师:</strong>
+                                "很好！用图像法是视觉型学习的优势。"
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function viewLearningPath(studentId) {
+            alert(`📚 为学生 ${studentId} 生成个性化学习路径...`);
+            addLog(`查看学习路径: ${studentId}`);
+        }
+
+        function generateTestForStudent(studentId) {
+            addLog(`AG5为学生 ${studentId} 生成独立测试...`);
+            
+            document.getElementById('student-detail').innerHTML += `
+                <div class="alert" style="border:2px solid var(--neon-cyan);background:rgba(0,243,255,0.1);border-radius:10px;padding:1rem;margin-top:1rem;">
+                    <h6 style="color:var(--neon-cyan);">📝 生成的测试题</h6>
+                    <p><strong>知识点:</strong> 二次函数最值问题</p>
+                    <ol style="color:var(--neon-cyan);">
+                        <li>某商品利润y = -x² + 8x - 12，求最大利润时的价格</li>
+                        <li>二次函数在区间[0,3]上的最大值</li>
+                        <li>应用题：用篱笆围一个矩形菜园，最大化面积</li>
+                    </ol>
+                    <button class="btn btn-cyber btn-sm mt-3" onclick="addLog('测试题已发送给学生')">📤 发送测试给学生</button>
+                </div>
+            `;
+        }
+
+        function sendNotification(studentId) {
+            const messages = [
+                "该复习二次函数最值问题了",
+                "有新的学习资源推荐",
+                "今天完成了5道练习题",
+                "学习进度更新了"
+            ];
+            const msg = messages[Math.floor(Math.random() * messages.length)];
+            
+            alert(`🔔 已向学生发送提醒: "${msg}"`);
+            addLog(`发送通知给 ${studentId}: ${msg}`);
+        }
+
+        function exportProgress(studentId) {
+            alert(`📊 正在为 ${studentId} 生成学习报告...`);
+            addLog(`导出学习报告: ${studentId}`);
+        }
+
+        function addLog(message) {
+            const container = document.getElementById('log-container');
+            const time = new Date().toLocaleTimeString('zh-CN');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerHTML = `<span style="color:var(--neon-cyan);">[${time}]</span> <span style="color:var(--neon-green);">✓</span> ${message}`;
+            container.insertBefore(entry, container.firstChild);
+        }
+
+        // 初始化拓扑图
+        const nodes = new vis.DataSet([
+            {id: 1, label: 'A1\n(学生)', group: 'learner', font: {size: 12}},
+            {id: 2, label: 'Gateway\n(网关)', group: 'gateway', font: {size: 12}},
+            {id: 3, label: 'AG2\n(诊断)', group: 'education', font: {size: 10}},
+            {id: 4, label: 'AG3\n(辅导)', group: 'education', font: {size: 10}},
+            {id: 5, label: 'AG4\n(资源)', group: 'education', font: {size: 10}},
+            {id: 6, label: 'AG5\n(评估)', group: 'education', font: {size: 10}}
+        ]);
+
+        const edges = new vis.DataSet([
+            {from: 1, to: 2, label: '数据', font: {size: 10}},
+            {from: 2, to: 3, label: '诊断', font: {size: 10}},
+            {from: 2, to: 4, label: '辅导', font: {size: 10}},
+            {from: 2, to: 5, label: '资源', font: {size: 10}},
+            {from: 2, to: 6, label: '测试', font: {size: 10}}
+        ]);
+
+        new vis.Network(
+            document.getElementById('network-container'),
+            {nodes: nodes, edges: edges},
+            {
+                nodes: {
+                    shape: 'box',
+                    font: {color: '#00f3ff'},
+                    color: {background: '#0a0a2e', border: '#00f3ff'}
+                },
+                edges: {
+                    color: {color: '#00f3ff'},
+                    font: {color: '#00f3ff'},
+                    arrows: {to: true}
+                },
+                groups: {
+                    learner: {color: {background: '#00ff9f', border: '#00ff9f'}},
+                    gateway: {color: {background: '#ff00ff', border: '#ff00ff'}},
+                    education: {color: {background: '#00f3ff', border: '#00f3ff'}}
+                },
+                physics: {enabled: true},
+                interaction: {hover: true}
+            }
+        );
+
+        // 页面加载时执行
+        loadStudents();
+    </script>
+</body>
+</html>

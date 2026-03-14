@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学生学习端 - 零信任隐私保护平台</title>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Noto Sans SC', sans-serif;
+            color: #2d3748;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-container {
+            height: 400px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom:1rem;
+            border: 2px solid rgba(74, 222, 234, 0.1);
+            overflow-y:auto;
+        }
+
+        .chat-message {
+            margin-bottom: 1rem;
+            padding: 1rem;
+            border-radius: 15px;
+            max-width: 85%;
+        }
+
+        .chat-ai {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin-left: auto;
+        }
+
+        .chat-student {
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid rgba(74, 222, 234, 0.2);
+        }
+
+        .input-area {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .chat-input {
+            flex: 1;
+            border-radius: 25px 0 0 25px;
+            padding: 0.8rem 1.2rem;
+            border: 2px solid rgba(74, 222, 234, 0.2);
+            font-size: 1rem;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: #4a90e2;
+            box-shadow: 0 0 20px rgba(74, 222, 234, 0.3);
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 0.8rem 1rem;
+            border: 2px solid rgba(74, 222, 234, 0.3);
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 12px;
+            color: #4a90e2;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn:hover {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: transparent;
+            transform: translateY(-2px);
+        }
+
+        .privacy-notice {
+            background: rgba(255, 107, 53, 0.1);
+            border: 2px solid #ff6b35;
+            border-radius: 15px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .quiz-option {
+            padding: 0.8rem 1rem;
+            border: 2px solid rgba(74, 222, 234, 0.2);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .quiz-option:hover {
+            background: rgba(74, 222, 234, 0.1);
+            border-color: #4a90e2;
+        }
+
+        .quiz-option.selected {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: transparent;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h2>👨‍🎓 学生学习端</h2>
+            
+            <!-- 学习统计 -->
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(100px,1fr));gap:1rem;margin-bottom:2rem;">
+                <div style="text-align:center;">
+                    <div style="font-size:2rem;font-weight:700;color:#4a90e2;">85%</div>
+                    <small class="text-muted">今日学习度</small>
+                </div>
+                <div style="text-align:center;">
+                    <div style="font-size:2rem;font-weight:700;color:#00d4aa;">12</div>
+                    <small class="text-muted">已掌握知识点</small>
+                </div>
+                <div style="text-align:center;">
+                    <div style="font-size:2rem;font-weight:700;color:#ff6b35;">7</div>
+                    <small class="text-muted">待复习</small>
+                </div>
+            </div>
+
+            <!-- 对话区域 -->
+            <div class="chat-container" id="chat-box">
+                <div class="chat-message chat-ai">
+                    <strong>🤖 AI老师</strong>
+                    <p>你好！我是你的AI辅导老师。我会根据你的学习风格，为你提供个性化的学习帮助。</p>
+                    <p style="margin-top:0.8rem;">有什么不懂的问题可以随时问我，我会用最适合你的方式来讲解！</p>
+                </div>
+            </div>
+
+            <!-- 输入区域 -->
+            <div class="input-area">
+                <input type="text" class="chat-input" id="user-input" 
+                           placeholder="输入你的问题...例如：二次函数的顶点公式怎么理解？" 
+                           onkeypress="if(event.key==='Enter')sendMessage()">
+                <button class="send-btn" onclick="sendMessage()">发送 📤</button>
+            </div>
+
+            <!-- 快捷问题 -->
+            <div style="display:flex;gap:0.5rem;flex-wrap:margin-top:1rem;">
+                <button class="action-btn" onclick="askQuestion('concept')">❓ 不懂概念</button>
+                <button class="action-btn" onclick="askQuestion('homework')">📝 作业帮助</button>
+                <button class="action-btn" onclick="askQuestion('example')">💡 看个例题</button>
+                <button class="action-btn" onclick="askQuestion('review')">📚 复习提醒</button>
+            </div>
+        </div>
+
+        <!-- 隐私说明 -->
+        <div class="privacy-notice">
+            <div style="font-size:1.5rem;margin-right:1rem;">🔐</div>
+            <div>
+                <strong>你的学习数据受到零信任隐私保护</strong>
+                原始数据在本地，经过隐私保护后才发送给AI智能体。
+            </div>
+        </div>
+
+        <div style="text-align:center;padding:2rem;color:rgba(255,255,255,0.8);">
+            <p>🔒 零信任隐私保护多智能体学习平台</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="api.js"></script>
+    <script>
+        // 学生数据
+        let learningStyle = 'Visual';
+        let studentId = 'stu_001';
+        let backendAvailable = false;
+
+        // 初始化：检查后端连接
+        async function init() {
+            backendAvailable = await checkBackendHealth();
+            if (backendAvailable) {
+                console.log('✅ 后端服务已连接');
+                addSystemMessage('已连接到智能辅导系统');
+            } else {
+                console.log('⚠️ 使用离线模式');
+                addSystemMessage('当前使用离线模式，部分功能受限');
+            }
+        }
+
+        // 添加系统消息
+        function addSystemMessage(text) {
+            const chatBox = document.getElementById('chat-box');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'chat-message';
+            messageDiv.style.cssText = 'background: rgba(255, 193, 7, 0.1); border: 1px solid #ffc107; text-align: center; font-size: 0.85rem; color: #856404;';
+            messageDiv.innerHTML = `<small>${text}</small>`;
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // 添加消息
+        function addMessage(sender, text, isUser = false) {
+            const chatBox = document.getElementById('chat-box');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${isUser ? 'chat-student' : 'chat-ai'}`;
+
+            const senderName = isUser ? '👤 你' : '🤖 AI老师';
+            
+            messageDiv.innerHTML = `
+                <div class="chat-sender">${senderName}</div>
+                <p style="margin-top:0.5rem;">${text}</p>
+            `;
+
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // 发送消息
+        async function sendMessage() {
+            const input = document.getElementById('user-input');
+            const message = input.value.trim();
+            
+            if (!message) return;
+
+            // 添加用户消息
+            addMessage('学生', message, true);
+            input.value = '';
+
+            // 显示"正在输入..."指示器
+            const typingIndicator = addTypingIndicator();
+
+            try {
+                let responseText;
+
+                if (backendAvailable) {
+                    // 使用真实的后端API
+                    const result = await sendStudentMessage({
+                        studentId: studentId,
+                        message: message,
+                        learningStyle: learningStyle
+                    });
+
+                    if (result.success) {
+                        responseText = result.response;
+                    } else {
+                        console.error('API调用失败:', result.error);
+                        responseText = generateFallbackResponse(learningStyle);
+                    }
+                } else {
+                    // 离线模式：使用模拟响应
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    responseText = generateFallbackResponse(learningStyle);
+                }
+
+                // 移除输入指示器并添加AI响应
+                removeTypingIndicator(typingIndicator);
+                addMessage('AI老师', responseText);
+
+            } catch (error) {
+                console.error('发送消息时出错:', error);
+                removeTypingIndicator(typingIndicator);
+                addMessage('AI老师', '抱歉，我遇到了一些问题。请稍后再试。');
+            }
+        }
+
+        // 添加"正在输入..."指示器
+        function addTypingIndicator() {
+            const chatBox = document.getElementById('chat-box');
+            const indicator = document.createElement('div');
+            indicator.className = 'chat-message chat-ai';
+            indicator.id = 'typing-indicator';
+            indicator.innerHTML = `
+                <strong>🤖 AI老师</strong>
+                <p style="margin-top:0.5rem;">
+                    <span class="typing-dot">●</span>
+                    <span class="typing-dot">●</span>
+                    <span class="typing-dot">●</span>
+                </p>
+                <style>
+                    .typing-dot {
+                        display: inline-block;
+                        animation: typing 1.4s infinite;
+                        color: white;
+                        font-size: 1.5rem;
+                        margin: 0 2px;
+                    }
+                    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+                    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+                    @keyframes typing {
+                        0%, 60%, 100% { opacity: 0.3; }
+                        30% { opacity: 1; }
+                    }
+                </style>
+            `;
+            chatBox.appendChild(indicator);
+            chatBox.scrollTop = chatBox.scrollHeight;
+            return indicator;
+        }
+
+        // 移除输入指示器
+        function removeTypingIndicator(indicator) {
+            if (indicator && indicator.parentNode) {
+                indicator.parentNode.removeChild(indicator);
+            }
+        }
+
+        // 快捷问题
+        function askQuestion(type) {
+            const questions = {
+                'concept': '这个概念怎么理解？',
+                'homework': '帮我讲解这道题',
+                'example': '给我看个例题',
+                'review': '帮我复习这些知识点'
+            };
+
+            addMessage('学生', questions[type], true);
+        }
+
+        // 学习风格检测（模拟）
+        function detectLearningStyle() {
+            addMessage('AI老师', '我注意到你是视觉型学习者。我会尽量用图像、可视化工具来帮助你学习。试着用图像法来理解概念会更容易！');
+        }
+    </script>
+</body>
+</html>

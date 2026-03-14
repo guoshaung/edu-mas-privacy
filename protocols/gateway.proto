@@ -1,0 +1,148 @@
+syntax = "proto3";
+
+package edu_mas;
+
+// 隐私网关服务
+service PrivacyGateway {
+  // 路由跨域请求
+  rpc RouteCrossDomain (CrossDomainRequest) returns (CrossDomainResponse);
+
+  // 学习者域 → 教学域路由
+  rpc RouteLearnerToEducation (LearnerDataRequest) returns (AgentResponse);
+
+  // 获取拓扑状态
+  rpc GetTopologyStatus (TopologyRequest) returns (TopologyResponse);
+
+  // 健康检查
+  rpc HealthCheck (HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+// 智能体服务（教学域通用）
+service AgentService {
+  // 处理智能体请求
+  rpc ProcessRequest (AgentRequestGRPC) returns (AgentResponseGRPC);
+
+  // 健康检查
+  rpc HealthCheck (HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+// 学习者域服务
+service LearnerService {
+  // 收集并上报学习者数据
+  rpc ReportLearnerData (LearnerDataGRPC) returns (LearnerDataResponse);
+
+  // 健康检查
+  rpc HealthCheck (HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+// ==================== 消息定义 ====================
+
+message CrossDomainRequest {
+  string msg_id = 1;
+  string source_domain = 2;
+  string target_domain = 3;
+  string source_agent = 4;
+  string target_agent = 5;
+  map<string, string> payload = 6;
+  bytes permission_data = 7;  // 序列化的DataPermission
+  int64 timestamp = 8;
+}
+
+message CrossDomainResponse {
+  bool success = 1;
+  string error = 2;
+  map<string, string> result = 3;
+}
+
+message LearnerDataRequest {
+  string student_id = 1;
+  map<string, string> demographic = 2;
+  map<string, double> raw_features = 3;
+  string target_agent = 4;
+}
+
+message AgentResponse {
+  string request_id = 1;
+  string agent_type = 2;
+  bool success = 3;
+  map<string, string> result = 4;
+  string error = 5;
+  map<string, string> metadata = 6;
+}
+
+message TopologyRequest {
+  bool include_edges = 1;
+  int32 max_edges = 2;
+}
+
+message TopologyResponse {
+  map<string, NodeInfo> nodes = 1;
+  repeated EdgeInfo edges = 2;
+  repeated string quarantined_nodes = 3;
+  int32 anomaly_count = 4;
+}
+
+message NodeInfo {
+  string type = 1;
+  string domain = 2;
+  int64 created_at = 3;
+}
+
+message EdgeInfo {
+  string src = 1;
+  string dst = 2;
+  string type = 3;
+  double weight = 4;
+}
+
+message AgentRequestGRPC {
+  string request_id = 1;
+  string agent_type = 2;
+  string task_type = 3;
+  map<string, string> data = 4;
+  map<string, string> context = 5;
+}
+
+message AgentResponseGRPC {
+  string request_id = 1;
+  string agent_type = 2;
+  bool success = 3;
+  map<string, string> result = 4;
+  string error = 5;
+}
+
+message LearnerDataGRPC {
+  string student_id = 1;
+  map<string, string> demographic = 2;
+  repeated InteractionRecord interaction_history = 3;
+  repeated PerformanceRecord performance_records = 4;
+  map<string, double> raw_features = 5;
+}
+
+message InteractionRecord {
+  string action = 1;
+  int64 duration = 2;
+  double completion = 3;
+}
+
+message PerformanceRecord {
+  string subject = 1;
+  string topic = 2;
+  double score = 3;
+}
+
+message LearnerDataResponse {
+  bool success = 1;
+  string pseudonym = 2;
+  map<string, double> protected_features = 3;
+}
+
+message HealthCheckRequest {
+  string service = 1;
+}
+
+message HealthCheckResponse {
+  bool healthy = 1;
+  string version = 2;
+  int64 uptime = 3;
+}

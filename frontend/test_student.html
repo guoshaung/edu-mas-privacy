@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学生端功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-left: 4px solid #4CAF50;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 15px;
+            background: white;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            white-space: pre-wrap;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        .success {
+            border-left: 4px solid #4CAF50;
+        }
+        .error {
+            border-left: 4px solid #f44336;
+        }
+        .loading {
+            color: #666;
+            font-style: italic;
+        }
+        select, input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 学生端功能测试</h1>
+
+        <div class="test-section">
+            <h3>1️⃣ API健康检查</h3>
+            <button onclick="testHealth()">测试连接</button>
+            <div id="health-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>2️⃣ 学生消息测试</h3>
+            <div>
+                <label>学习风格：</label>
+                <select id="learning-style">
+                    <option value="Visual">Visual (视觉型)</option>
+                    <option value="Aural">Aural (听觉型)</option>
+                    <option value="ReadWrite">ReadWrite (读写型)</option>
+                    <option value="Kinesthetic">Kinesthetic (动觉型)</option>
+                </select>
+            </div>
+            <div>
+                <label>问题：</label>
+                <input type="text" id="student-message" value="二次函数的顶点公式怎么理解？" style="width: 400px;">
+            </div>
+            <button onclick="testSendMessage()">发送消息</button>
+            <div id="message-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>3️⃣ 快速测试场景</h3>
+            <button onclick="quickTest('quadratic')">📐 测试二次函数问题</button>
+            <button onclick="quickTest('concept')">❓ 测试概念理解</button>
+            <button onclick="quickTest('homework')">📝 测试作业帮助</button>
+            <button onclick="quickTest('example')">💡 测试例题请求</button>
+            <div id="quick-result" class="result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>4️⃣ 不同学习风格对比</h3>
+            <button onclick="compareStyles()">🔍 对比所有风格</button>
+            <div id="compare-result" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8080';
+
+        // 测试健康检查
+        async function testHealth() {
+            const resultDiv = document.getElementById('health-result');
+            resultDiv.className = 'result loading';
+            resultDiv.textContent = '正在测试连接...';
+
+            try {
+                const response = await fetch(`${API_BASE}/health`);
+                const data = await response.json();
+
+                if (data.status === 'healthy') {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <strong>✅ 连接成功！</strong><br>
+                        状态: ${data.status}<br>
+                        服务: ${JSON.stringify(data.services, null, 2)}
+                    `;
+                } else {
+                    throw new Error('服务不健康');
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<strong>❌ 连接失败</strong><br>${error.message}`;
+            }
+        }
+
+        // 测试发送消息
+        async function testSendMessage() {
+            const resultDiv = document.getElementById('message-result');
+            const style = document.getElementById('learning-style').value;
+            const message = document.getElementById('student-message').value;
+
+            if (!message.trim()) {
+                alert('请输入问题');
+                return;
+            }
+
+            resultDiv.className = 'result loading';
+            resultDiv.textContent = '🤖 AI老师正在思考...';
+
+            try {
+                const startTime = Date.now();
+                const response = await fetch(`${API_BASE}/api/student/message`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        student_id: 'test_student',
+                        message: message,
+                        learning_style: style
+                    })
+                });
+
+                const data = await response.json();
+                const responseTime = Date.now() - startTime;
+
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <strong>✅ 回复成功 (${responseTime}ms)</strong><br>
+                        <strong>学习风格:</strong> ${style}<br>
+                        <strong>学生问题:</strong> ${message}<br>
+                        <hr>
+                        <strong>AI老师回复:</strong><br>
+                        ${formatResponse(data.data.response)}
+                    `;
+                } else {
+                    throw new Error(data.error || '发送失败');
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<strong>❌ 发送失败</strong><br>${error.message}`;
+            }
+        }
+
+        // 快速测试
+        async function quickTest(type) {
+            const resultDiv = document.getElementById('quick-result');
+            const tests = {
+                'quadratic': { msg: '二次函数的顶点公式怎么理解？', style: 'Visual' },
+                'concept': { msg: '我不懂这个概念', style: 'Aural' },
+                'homework': { msg: '帮我看这道作业题', style: 'Kinesthetic' },
+                'example': { msg: '给我看个例题', style: 'ReadWrite' }
+            };
+
+            const test = tests[type];
+            resultDiv.className = 'result loading';
+            resultDiv.textContent = '🤖 AI老师正在思考...';
+
+            try {
+                const response = await fetch(`${API_BASE}/api/student/message`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        student_id: 'test_student',
+                        message: test.msg,
+                        learning_style: test.style
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `
+                        <strong>✅ 测试场景: ${type}</strong><br>
+                        <strong>问题:</strong> ${test.msg}<br>
+                        <strong>风格:</strong> ${test.style}<br>
+                        <hr>
+                        ${formatResponse(data.data.response)}
+                    `;
+                } else {
+                    throw new Error(data.error || '发送失败');
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<strong>❌ 测试失败</strong><br>${error.message}`;
+            }
+        }
+
+        // 对比不同学习风格
+        async function compareStyles() {
+            const resultDiv = document.getElementById('compare-result');
+            const message = '二次函数的顶点公式怎么理解？';
+            const styles = ['Visual', 'Aural', 'ReadWrite', 'Kinesthetic'];
+
+            resultDiv.className = 'result loading';
+            resultDiv.textContent = '🤖 正在测试所有学习风格...';
+
+            try {
+                let results = '';
+
+                for (const style of styles) {
+                    const response = await fetch(`${API_BASE}/api/student/message`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            student_id: 'test_student',
+                            message: message,
+                            learning_style: style
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        results += `
+                            <hr>
+                            <strong>📚 ${style} (视觉型):</strong><br>
+                            ${data.data.response.substring(0, 200)}...
+                        `;
+                    }
+                }
+
+                resultDiv.className = 'result success';
+                resultDiv.innerHTML = `
+                    <strong>✅ 学习风格对比测试</strong><br>
+                    问题: "${message}"
+                    ${results}
+                `;
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `<strong>❌ 测试失败</strong><br>${error.message}`;
+            }
+        }
+
+        // 格式化回复文本
+        function formatResponse(text) {
+            // 保留换行和格式
+            return text.replace(/\n/g, '<br>').replace(/\*\*/g, '').replace(/•/g, '•');
+        }
+
+        // 页面加载时自动测试连接
+        window.onload = function() {
+            testHealth();
+        };
+    </script>
+</body>
+</html>

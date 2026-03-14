@@ -1,0 +1,27 @@
+# 最小化依赖清单（仅核心功能）
+
+# 基础依赖
+pydantic>=2.9.0
+numpy>=1.24.0
+
+# 深度学习（CPU版本）
+torch>=2.0.0
+
+# 隐私计算
+opacus>=1.5.0
+
+# LangGraph和LangChain（可选，用于智能体编排）
+langgraph>=0.2.0
+langchain>=0.3.0
+langchain-openai>=0.2.0
+
+# 通信与存储
+grpcio>=1.62.0
+grpcio-tools>=1.62.0
+redis>=5.2.0
+
+# 工具
+python-dotenv>=1.0.0
+
+# 可选：GNN（如果torch-geometric安装失败，可以跳过）
+# torch-geometric>=2.6.0

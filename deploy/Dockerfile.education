@@ -1,0 +1,35 @@
+FROM python:3.11-slim
+
+# 设置工作目录
+WORKDIR /app
+
+# 安装系统依赖
+RUN apt-get update && apt-get install -y \
+    gcc \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+# 复制项目文件
+COPY requirements.txt .
+COPY protocols/ ./protocols/
+COPY agents/ ./agents/
+
+# 安装Python依赖
+RUN pip install --no-cache-dir -r requirements.txt
+
+# 编译protobuf
+RUN python -m grpc_tools.protoc \
+    --proto_path=protocols \
+    --python_out=. \
+    --grpc_python_out=. \
+    protocols/gateway.proto
+
+# 暴露端口
+EXPOSE 50052
+
+# 健康检查
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import grpc; channel = grpc.insecure_channel('localhost:50052'); health_stub = gateway_pb2_grpc.HealthCheckStub(channel); health_stub.Check(gateway_pb2.HealthCheckRequest())" || exit 1
+
+# 启动服务
+CMD ["python", "deploy/education_server.py", "--port", "50052", "--workers", "10"]

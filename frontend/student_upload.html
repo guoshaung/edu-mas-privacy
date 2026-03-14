@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学生学习端 - 零信任隐私保护学习平台</title>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --primary-blue: #4a90e2;
+            --light-blue: #7dd3fc;
+            --accent-green: #00d4aa;
+            --accent-orange: #ff6b35;
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --text-primary: #2d3748;
+            --text-secondary: #718096;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Noto Sans SC', sans-serif;
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+            animation: float 6s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
+        }
+
+        .content-wrapper {
+            position: relative;
+            z-index: 1;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .chat-container {
+            height: 400px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border: 2px solid rgba(74, 222, 234, 0.1);
+            overflow-y: auto;
+        }
+
+        .chat-message {
+            margin-bottom: 1rem;
+            padding: 1rem 1.25rem;
+            border-radius: 15px;
+            max-width: 85%;
+            animation: message-in 0.3s ease;
+        }
+
+        @keyframes message-in {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .chat-ai {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin-right: auto;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .chat-student {
+            background: rgba(255, 255, 255, 0.8);
+            border: 2px solid rgba(74, 222, 234, 0.2);
+            margin-left: auto;
+        }
+
+        .input-area {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .chat-input {
+            flex: 1;
+            border-radius: 25px 0 0 25px;
+            padding: 0.8rem 1.2rem;
+            border: 2px solid rgba(74, 222, 234, 0.2);
+            font-size: 1rem;
+        }
+
+        .chat-input:focus {
+            outline: none;
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 20px rgba(74, 222, 234, 0.3);
+        }
+
+        .send-btn {
+            background: var(--bg-gradient);
+            color: white;
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 0.8rem 1rem;
+            border: 2px solid rgba(74, 222, 234, 0.3);
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 12px;
+            color: var(--primary-blue);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn:hover {
+            background: var(--bg-gradient);
+            color: white;
+            border-color: transparent;
+            transform: translateY(-2px);
+        }
+
+        /* 上传图片区域 */
+        .upload-section {
+            margin-top: 2rem;
+        }
+
+        .upload-area {
+            border: 3px dashed rgba(74, 222, 234, 0.3);
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.6);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-area:hover {
+            border-color: var(--primary-blue);
+            background: rgba(74, 222, 234, 0.1);
+        }
+
+        .upload-area.dragover {
+            border-color: var(--accent-green);
+            background: rgba(0, 212, 170, 0.1);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .upload-text {
+            color: var(--text-secondary);
+            font-size: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .upload-hint {
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        .uploaded-image {
+            max-width: 100%;
+            max-height: 300px;
+            margin-top: 1rem;
+            border-radius: 10px;
+            border: 2px solid rgba(74, 222, 234, 0.2);
+            display: none;
+        }
+
+        .ocr-status {
+            margin-top: 1rem;
+            padding: 1rem;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .ocr-status.processing {
+            background: rgba(102, 126, 234, 0.1);
+            border: 2px solid var(--primary-blue);
+        }
+
+        .ocr-status.success {
+            background: rgba(0, 212, 170, 0.1);
+            border: 2px solid var(--accent-green);
+        }
+
+        .ocr-status.error {
+            background: rgba(255, 107, 53, 0.1);
+            border: 2px solid var(--accent-orange);
+        }
+
+        .ocr-progress {
+            width: 100%;
+            height: 8px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+
+        .ocr-progress-bar {
+            height: 100%;
+            background: var(--bg-gradient);
+            transition: width 0.3s ease;
+        }
+
+        .ocr-result {
+            background: rgba(255, 255, 255, 0.6);
+            border: 2px solid rgba(74, 222, 234, 0.2);
+            border-radius: 10px;
+            padding: 1rem;
+            margin-top: 1rem;
+            font-family: "Monaco", "Courier New", monospace;
+            font-size: 0.9rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .send-to-teacher-btn {
+            width: 100%;
+            background: var(--bg-gradient);
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .send-to-teacher-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .privacy-notice {
+            background: rgba(255, 107, 53, 0.1);
+            border: 2px solid var(--accent-orange);
+            border-radius: 15px;
+            padding: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="content-wrapper">
+        <!-- 导航栏 -->
+        <nav class="navbar navbar-expand-lg navbar-light sticky-top" style="background:rgba(255,255,255,0.95)!important;">
+            <div class="container">
+                <a class="navbar-brand" href="#" style="font-weight:700;color:#4a90e2;">🎓 零信任隐私保护学习平台 - 学生端</a>
+                <div class="navbar-nav ms-auto">
+                    <span class="navbar-text">
+                        <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#00ff9f;margin-right:8px;box-shadow:0 0 10px #00ff9f;"></span>
+                        学习模式在线
+                    </span>
+                </div>
+            </div>
+        </nav>
+
+        <!-- 学生档案 -->
+        <div class="card" style="animation:slide-up 0.5s ease;">
+            <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;">
+                <div style="width:80px;height:80px;border-radius:50%;background:var(--bg-gradient);display:flex;align-items:center;justify-content:center;font-size:2rem;box-shadow:0 5px 15px rgba(102,126,234,0.4);">👨‍🎓</div>
+                <div style="flex:1;">
+                    <h3>张同学</h3>
+                    <p class="text-muted">初三 · 学习进度跟踪中</p>
+                </div>
+                <div style="padding:0.5rem 1.5rem;background:var(--bg-gradient);color:white;border-radius:20px;font-weight:500;box-shadow:0 5px 15px rgba(102,126,234,0.3);">
+                    👁️ 视觉型学习者
+                </div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(100px,1fr));gap:1rem;">
+                <div style="text-align:center;background:rgba(74,222,234,0.1);padding:1rem;border-radius:12px;border:2px solid rgba(74,222,234,0.2);">
+                    <div style="font-size:1.5rem;font-weight:700;color:#4a90e2;">85%</div>
+                    <small class="text-muted">今日学习度</small>
+                </div>
+                <div style="text-align:center;background:rgba(74,222,234,0.1);padding:1rem;border-radius:12px;border:2px solid rgba(74,222,234,0.2);">
+                    <div style="font-size:1.5rem;font-weight:700;color:#4a90e2;">12</div>
+                    <small class="text-muted">已掌握知识点</small>
+                </div>
+                <div style="text-align:center;background:rgba(74,222,234,0.1);padding:1rem;border-radius:12px;border:2px solid rgba(74,222,234,0.2);">
+                    <div style="font-size:1.5rem;font-weight:700;color:#4a90e2;">7</div>
+                    <small class="text-muted">待复习</small>
+                </div>
+                <div style="text-align:center;background:rgba(74,222,234,0.1);padding:1rem;border-radius:12px;border:2px solid rgba(74,222,234,0.2);">
+                    <div style="font-size:1.5rem;font-weight:700;color:#4a90e2;">🔒</div>
+                    <small class="text-muted">隐私保护中</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主要功能区 -->
+        <div class="card" id="main-chat-section">
+            <div style="color:#4a90e2;font-weight:700;margin-bottom:1rem;">💬 与AI老师对话学习</div>
+            <div style="color:#718096;font-size:0.9rem;margin-bottom:1.5rem;">你的AI学习助手，所有对话都经过隐私保护，AI老师会根据你的学习风格提供帮助</div>
+
+            <!-- 快捷操作 -->
+            <div class="quick-actions" style="margin-bottom:1rem;">
+                <button class="action-btn" onclick="showResources()">📚 学习资源</button>
+                <button class="action-btn" onclick="showProgress()">📊 学习进度</button>
+                <button class="action-btn" onclick="startQuiz()">📝 开始测试</button>
+                <button class="action-btn" onclick="showTopics()">📖 知识图谱</button>
+            </div>
+
+            <!-- 聊天界面 -->
+            <div class="chat-container" id="chat-box">
+                <div class="chat-message chat-ai">
+                    <strong>🤖 AI辅导老师</strong>
+                    <p>你好！我是你的AI辅导老师。我会根据你的学习风格，为你提供个性化的学习帮助。</p>
+                    <p style="margin-top:0.8rem;">有什么不懂的问题可以随时问我，我会用最适合你的方式来讲解！</p>
+                </div>
+            </div>
+
+            <!-- 输入区域 -->
+            <div class="input-area">
+                <input type="text" class="chat-input" id="user-input" 
+                       placeholder="输入你的问题...例如：二次函数的顶点公式怎么理解？" 
+                       onkeypress="if(event.key==='Enter')sendMessage()">
+                <button class="send-btn" onclick="sendMessage()">发送 📤</button>
+            </div>
+
+            <!-- 快捷问题按钮 -->
+            <div class="quick-actions" style="margin-top:1rem;">
+                <button class="action-btn" onclick="askQuestion('concept')">❓ 不懂概念</button>
+                <button class="action-btn" onclick="askQuestion('homework')">📝 作业帮助</button>
+                <button class="action-btn" onclick="askQuestion('example')">💡 看个例题</button>
+                <button class="action-btn" onclick="askQuestion('review')">📚 复习提醒</button>
+            </div>
+
+            <!-- 图片上传区域 -->
+            <div class="upload-section">
+                <h4 style="margin-bottom:1rem;color:#4a90e2;">📷 上传作业图片（OCR识别）</h4>
+                <p class="text-muted" style="margin-bottom:1rem;">上传你的作业图片，系统会自动识别文字并发送给老师</p>
+                
+                <div class="upload-area" id="upload-area" onclick="document.getElementById('file-input').click()">
+                    <div class="upload-icon">📸</div>
+                    <div class="upload-text">点击或拖拽上传作业图片</div>
+                    <div class="upload-hint">支持 JPG、PNG 格式，自动OCR识别文字</div>
+                </div>
+                
+                <input type="file" id="file-input" accept="image/*" onchange="handleFileSelect(event)">
+                
+                <img id="preview-image" class="uploaded-image" alt="上传的图片">
+                
+                <div id="ocr-status" class="ocr-status">
+                    <div id="ocr-message">正在识别图片文字...</div>
+                    <div class="ocr-progress">
+                        <div id="ocr-progress-bar" class="ocr-progress-bar" style="width:0%"></div>
+                    </div>
+                </div>
+                
+                <div id="ocr-result" class="ocr-result"></div>
+                
+                <button id="send-to-teacher-btn" class="send-to-teacher-btn" onclick="sendToTeacher()">
+                    📤 发送给老师
+                </button>
+            </div>
+        </div>
+
+        <!-- 隐私提示 -->
+        <div class="privacy-notice">
+            <div style="font-size:2rem;margin-right:1rem;">🔐</div>
+            <div>
+                <strong>你的学习数据受到零信任隐私保护</strong>
+                原始数据在本地，经过隐私保护后才发送给AI智能体。
+            </div>
+        </div>
+
+        <div style="text-align:center;padding:2rem;color:rgba(255,255,255,0.8);">
+            <p>🔒 零信任隐私保护多智能体学习平台</p>
+            <p style="font-size:0.8rem;">SRPG + LDP + 动态RBAC + GNN拓扑防御</p>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 学生数据
+        let learningStyle = 'Visual';
+        let currentImageData = null;
+        let currentOcrText = '';
+
+        // 根据学习风格的回复
+        const responses = {
+            'Visual': [
+                '试着画个图来理解这个概念会更容易！',
+                '我们可以用图像法来学习这个公式',
+                '观察图像的变化趋势，能发现什么规律？',
+                '我给你画个示意图帮助理解'
+            ],
+            'Aural': [
+                '我给你详细讲解一遍这个知识点',
+                '试着把你理解的思路讲给我听听',
+                '我们可以口头讨论一下这个概念',
+                '可以听听相关的音频课程'
+            ],
+            'ReadWrite': [
+                '把这个概念写成笔记会更好理解',
+                '我们列个提纲总结关键点',
+                '建议你阅读教材上的相关章节',
+                '做思维导图来整理知识点'
+            ],
+            'Kinesthetic': [
+                '让我们动手实践一下！',
+                '可以用实物模型来帮助理解',
+                '做个小实验验证一下',
+                '试试实际操作来理解概念'
+            ]
+        };
+
+        // 添加消息
+        function addMessage(sender, text, isUser = false) {
+            const chatBox = document.getElementById('chat-box');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `chat-message ${isUser ? 'chat-student' : 'chat-ai'}`;
+
+            const senderName = isUser ? '👤 你' : '🤖 AI老师';
+            
+            messageDiv.innerHTML = `
+                <div style="font-weight:700;margin-bottom:0.5rem;">${senderName}</div>
+                <p style="margin-top:0.5rem;">${text}</p>
+            `;
+
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // 发送消息
+        function sendMessage() {
+            const input = document.getElementById('user-input');
+            const message = input.value.trim();
+            
+            if (!message) return;
+
+            // 添加用户消息
+            addMessage('学生', message, true);
+            input.value = '';
+
+            // 模拟AI响应
+            setTimeout(() => {
+                const response = responses[learningStyle][Math.floor(Math.random() * 3)];
+                addMessage('AI老师', response);
+            }, 1000);
+        }
+
+        // 快捷问题
+        function askQuestion(type) {
+            const questions = {
+                'concept': '这个概念怎么理解？',
+                'homework': '帮我讲解这道题',
+                'example': '给我看个例题',
+                'review': '帮我复习这些知识点'
+            };
+
+            addMessage('学生', questions[type], true);
+        }
+
+        function showResources() {
+            addMessage('AI老师', '好的，我为你推荐一些适合视觉型学习者的资源：视频课程、图像化工具等。你可以访问 Desmos 或 B站学习视频。');
+        }
+
+        function showProgress() {
+            addMessage('AI老师', '你当前的进度是：二次函数 85%、三角函数 45%、一元二次不等式 20%。建议加强三角函数的学习。');
+        }
+
+        function startQuiz() {
+            addMessage('AI老师', '好的，我为你准备了一些测试题。测试是独立的，不会参考我们的对话记录，确保公平评估。');
+        }
+
+        function showTopics() {
+            addMessage('AI老师', '知识点导航：二次函数（基础、进阶）、三角函数（弧度制、诱导公式）、一元二次不等式（解法、应用）等。');
+        }
+
+        // 文件上传和OCR识别
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            processImage(file);
+        }
+
+        // 拖拽上传
+        const uploadArea = document.getElementById('upload-area');
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                processImage(file);
+            }
+        });
+
+        // 处理图片
+        function processImage(file) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                // 显示预览
+                const preview = document.getElementById('preview-image');
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                currentImageData = e.target.result;
+
+                // 开始OCR识别
+                performOCR(e.target.result);
+            };
+
+            reader.readAsDataURL(file);
+        }
+
+        // OCR识别
+        async function performOCR(imageData) {
+            const statusDiv = document.getElementById('ocr-status');
+            const messageDiv = document.getElementById('ocr-message');
+            const progressBar = document.getElementById('ocr-progress-bar');
+            const resultDiv = document.getElementById('ocr-result');
+            const sendBtn = document.getElementById('send-to-teacher-btn');
+
+            // 显示处理状态
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'ocr-status processing';
+            messageDiv.textContent = '🔍 正在识别图片文字...';
+            progressBar.style.width = '0%';
+            resultDiv.style.display = 'none';
+            sendBtn.style.display = 'none';
+
+            try {
+                // 使用 Tesseract.js 进行OCR识别
+                const result = await Tesseract.recognize(
+                    imageData,
+                    'chi_sim+eng', // 中文简体 + 英文
+                    {
+                        logger: m => {
+                            if (m.status === 'recognizing text') {
+                                const progress = Math.round(m.progress * 100);
+                                progressBar.style.width = progress + '%';
+                                messageDiv.textContent = `🔍 正在识别... ${progress}%`;
+                            }
+                        }
+                    }
+                );
+
+                // 识别成功
+                currentOcrText = result.data.text;
+                
+                statusDiv.className = 'ocr-status success';
+                messageDiv.innerHTML = '✅ 识别完成！<br>点击"发送给老师"按钮将内容发送给教师';
+                
+                // 显示识别结果
+                resultDiv.textContent = currentOcrText;
+                resultDiv.style.display = 'block';
+                
+                // 显示发送按钮
+                sendBtn.style.display = 'block';
+
+            } catch (error) {
+                // 识别失败
+                console.error('OCR Error:', error);
+                statusDiv.className = 'ocr-status error';
+                messageDiv.textContent = '❌ 识别失败，请重新上传图片';
+                progressBar.style.width = '0%';
+            }
+        }
+
+        // 发送给老师
+        function sendToTeacher() {
+            if (!currentImageData || !currentOcrText) {
+                alert('请先上传图片并等待识别完成');
+                return;
+            }
+
+            // 模拟发送给教师端
+            const uploadData = {
+                type: 'student-upload',
+                studentName: '张同学',
+                studentId: 'stu_001',
+                imageData: currentImageData,
+                ocrText: currentOcrText,
+                timestamp: new Date().toLocaleString('zh-CN')
+            };
+
+            // 如果教师端在同一窗口，通过 postMessage 发送
+            if (window.opener) {
+                window.opener.postMessage(uploadData, '*');
+            }
+
+            // 在聊天框显示
+            addMessage('你', `📷 已上传作业图片，OCR识别结果：\n${currentOcrText}`, true);
+            addMessage('AI老师', '收到！你的作业已通过隐私保护处理后发送给老师。老师会尽快查看并给你反馈。');
+
+            // 重置上传区域
+            resetUpload();
+        }
+
+        // 重置上传区域
+        function resetUpload() {
+            document.getElementById('preview-image').style.display = 'none';
+            document.getElementById('ocr-status').style.display = 'none';
+            document.getElementById('ocr-result').style.display = 'none';
+            document.getElementById('send-to-teacher-btn').style.display = 'none';
+            document.getElementById('file-input').value = '';
+            currentImageData = null;
+            currentOcrText = '';
+        }
+
+        // 页面加载动画
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slide-up {
+                from { opacity: 0; transform: translateY(30px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

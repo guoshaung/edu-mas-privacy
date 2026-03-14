@@ -1,0 +1,102 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # 学习者域服务（高信任域）
+  # ==========================================
+  learner-domain:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.learner
+    container_name: edu-learner-domain
+    ports:
+      - "50053:50053"
+    environment:
+      - DOMAIN_TYPE=learner
+      - GATEWAY_ADDR=gateway:50051
+    networks:
+      - edu-network
+    volumes:
+      - ./data/learner:/app/data
+    restart: unless-stopped
+
+  # ==========================================
+  # 隐私网关（控制平面）
+  # ==========================================
+  gateway:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.gateway
+    container_name: edu-gateway
+    ports:
+      - "50051:50051"
+      - "8080:8080"  # 监控面板
+    environment:
+      - DOMAIN_TYPE=gateway
+      - REDIS_ADDR=redis:6379
+      - GNN_ENABLED=true
+    networks:
+      - edu-network
+    depends_on:
+      - redis
+    volumes:
+      - ./data/gateway:/app/data
+    restart: unless-stopped
+
+  # ==========================================
+  # 教学域服务（低信任域）
+  # ==========================================
+  education-domain:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.education
+    container_name: edu-education-domain
+    ports:
+      - "50052:50052"
+    environment:
+      - DOMAIN_TYPE=education
+      - GATEWAY_ADDR=gateway:50051
+    networks:
+      - edu-network
+    volumes:
+      - ./data/education:/app/data
+    restart: unless-stopped
+
+  # ==========================================
+  # Redis（RBAC权限存储）
+  # ==========================================
+  redis:
+    image: redis:7-alpine
+    container_name: edu-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - edu-network
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  # ==========================================
+  # 监控面板（可选）
+  # ==========================================
+  monitoring:
+    image: grafana/grafana:latest
+    container_name: edu-monitoring
+    ports:
+      - "3000:3000"
+    networks:
+      - edu-network
+    volumes:
+      - ./deploy/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./deploy/grafana/datasources:/etc/grafana/provisioning/datasources
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+    restart: unless-stopped
+
+networks:
+  edu-network:
+    driver: bridge
+
+volumes:
+  redis-data:

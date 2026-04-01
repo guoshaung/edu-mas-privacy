@@ -1,0 +1,250 @@
+:root {
+  --bg-start: #f5efe4;
+  --bg-end: #edf4f1;
+  --panel: rgba(255, 252, 247, 0.88);
+  --panel-strong: rgba(255, 255, 255, 0.82);
+  --text: #1f2a37;
+  --muted: #607085;
+  --line: rgba(42, 59, 77, 0.12);
+  --primary: #0f766e;
+  --primary-strong: #115e59;
+  --shadow: 0 24px 70px rgba(33, 45, 62, 0.14);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top left, rgba(255, 183, 77, 0.3), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(15, 118, 110, 0.18), transparent 30%),
+    linear-gradient(135deg, var(--bg-start) 0%, #f1e6d2 45%, var(--bg-end) 100%);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.page-shell {
+  position: relative;
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  overflow: hidden;
+}
+
+.orb {
+  position: absolute;
+  width: 360px;
+  height: 360px;
+  border-radius: 50%;
+  filter: blur(18px);
+  opacity: 0.45;
+}
+
+.orb-left {
+  top: -90px;
+  left: -110px;
+  background: rgba(217, 119, 6, 0.22);
+}
+
+.orb-right {
+  right: -120px;
+  bottom: -100px;
+  background: rgba(15, 118, 110, 0.18);
+}
+
+.portal-card {
+  position: relative;
+  z-index: 1;
+  width: min(1120px, 100%);
+  display: grid;
+  grid-template-columns: 1.08fr 0.92fr;
+  background: var(--panel);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 28px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(12px);
+}
+
+.portal-copy {
+  padding: 56px;
+  border-right: 1px solid var(--line);
+}
+
+.eyebrow {
+  display: inline-block;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(15, 118, 110, 0.12);
+  color: var(--primary-strong);
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.portal-copy h1 {
+  margin: 12px 0 18px;
+  font-size: clamp(2.2rem, 4vw, 3.6rem);
+  line-height: 1.05;
+}
+
+.portal-copy p,
+.panel-header p,
+.role-card span,
+.tip-text,
+.preview-tile span {
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.pill-row span {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(217, 119, 6, 0.12);
+  color: #9a5a06;
+  font-size: 0.86rem;
+}
+
+.preview-panel {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 32px;
+}
+
+.preview-tile {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--panel-strong);
+}
+
+.preview-tile strong {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 1.02rem;
+}
+
+.login-panel {
+  padding: 56px 44px;
+}
+
+.panel-header h2 {
+  margin: 0 0 8px;
+  font-size: 1.9rem;
+}
+
+.role-grid {
+  display: grid;
+  gap: 14px;
+  margin: 28px 0;
+}
+
+.role-card {
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 18px 18px 16px;
+  background: rgba(255, 255, 255, 0.74);
+  cursor: pointer;
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.role-card strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 1.05rem;
+}
+
+.role-card.active,
+.role-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(15, 118, 110, 0.55);
+  box-shadow: 0 10px 24px rgba(15, 118, 110, 0.12);
+}
+
+.input-group {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.input-group span {
+  font-weight: 600;
+}
+
+.input-group input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 16px;
+  background: rgba(255, 255, 255, 0.9);
+  outline: none;
+}
+
+.input-group input:focus {
+  border-color: rgba(15, 118, 110, 0.55);
+  box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.08);
+}
+
+.primary-button {
+  width: 100%;
+  border: none;
+  border-radius: 16px;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-strong) 100%);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 180ms ease;
+}
+
+.primary-button:hover {
+  transform: translateY(-2px);
+}
+
+.tip-text {
+  margin-top: 14px;
+  font-size: 0.92rem;
+}
+
+@media (max-width: 900px) {
+  .portal-card {
+    grid-template-columns: 1fr;
+  }
+
+  .portal-copy {
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+  }
+}
+
+@media (max-width: 640px) {
+  .portal-copy,
+  .login-panel {
+    padding: 28px;
+  }
+
+  .preview-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .portal-copy h1 {
+    font-size: 2.2rem;
+  }
+}

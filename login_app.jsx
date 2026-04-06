@@ -4,23 +4,22 @@ const roleOptions = [
   {
     id: "student",
     title: "学生入口",
-    subtitle: "进入个性化学习、隐私保护问答与学习支持界面。",
-    target: "./student_hub.html",
-    metrics: ["提问与对话", "学习规划", "知识检测", "隐私网关"],
+    subtitle: "进入个性诊断、学习规划与本地画像工作区。",
+    target: "/frontend/student_hub.html",
+    metrics: ["个性诊断", "学习规划", "知识检验", "本地画像"],
   },
   {
     id: "teacher",
     title: "教师入口",
-    subtitle: "进入教学分析、资源调度与课堂管理界面。",
-    target: "./teacher_cn.html",
-    metrics: ["班级画像", "资源编排", "学习监测", "策略反馈"],
+    subtitle: "进入教学观察、任务配置与班级概览工作区。",
+    target: "/frontend/teacher_cn.html",
+    metrics: ["班级概览", "任务配置", "学习追踪", "课堂反馈"],
   },
 ];
 
 function App() {
   const [selectedRole, setSelectedRole] = useState("student");
   const [displayName, setDisplayName] = useState("");
-
   const activeRole = roleOptions.find((role) => role.id === selectedRole);
 
   const handleEnter = () => {
@@ -29,7 +28,6 @@ function App() {
       displayName: displayName.trim(),
       updatedAt: new Date().toISOString(),
     };
-
     sessionStorage.setItem("eduMasProfile", JSON.stringify(profile));
     window.location.href = activeRole.target;
   };
@@ -43,13 +41,11 @@ function App() {
         <section className="portal-copy">
           <span className="eyebrow">Multi-Agent Privacy Learning</span>
           <h1>统一登录门户</h1>
-          <p>
-            保留现有教师端与学生端页面，在统一入口完成身份选择后再进入对应工作台。
-          </p>
+          <p>通过一个统一入口进入教师端或学生端。登录信息只保存在当前浏览器会话，用于本地角色分流。</p>
           <div className="pill-row">
             <span>React 入口</span>
             <span>角色分流</span>
-            <span>隐私优先</span>
+            <span>朴素界面</span>
           </div>
           <div className="preview-panel">
             {activeRole.metrics.map((item) => (
@@ -64,7 +60,7 @@ function App() {
         <section className="login-panel">
           <div className="panel-header">
             <h2>选择角色</h2>
-            <p>先确认你的身份，再进入现有的教师端或学生端页面。</p>
+            <p>先确认你的身份，再进入对应工作台。</p>
           </div>
 
           <div className="role-grid">
@@ -94,9 +90,7 @@ function App() {
             进入 {activeRole.title}
           </button>
 
-          <p className="tip-text">
-            登录信息会暂存到当前浏览器会话，后续可以继续接教师端与学生端的真实鉴权接口。
-          </p>
+          <p className="tip-text">登录信息只用于本地页面跳转，后续可继续接真实鉴权接口。</p>
         </section>
       </main>
     </div>

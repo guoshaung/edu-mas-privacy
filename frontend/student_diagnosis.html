@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>学生学习台 - 个性诊断</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg1:#f6f8fb; --bg2:#f1f5f9; --panel:#ffffff; --line:#dbe3ee; --text:#223248; --muted:#718199; --primary:#2f80ed; --primary2:#1f6fd6; --success:#45b36b; --shadow:0 12px 32px rgba(42,88,136,.08); }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:"Noto Sans SC",sans-serif; color:var(--text); background:linear-gradient(180deg,var(--bg1),var(--bg2)); }
+    button,input,select,textarea { font:inherit; }
+    .shell { width:min(1160px, calc(100% - 28px)); margin:0 auto; padding:24px 0 52px; }
+    .card,.wizard,.summary,.topbar { background:var(--panel); border:1px solid var(--line); border-radius:20px; box-shadow:var(--shadow); }
+    .topbar { display:flex; justify-content:space-between; align-items:center; gap:14px; padding:18px 22px; margin-bottom:20px; }
+    .brand { display:flex; align-items:center; gap:14px; }
+    .logo { width:52px; height:52px; border-radius:16px; display:grid; place-items:center; background:var(--primary); color:#fff; font-size:24px; font-weight:800; }
+    .brand h1 { margin:0; font-size:1.35rem; }
+    .muted { color:var(--muted); }
+    .pill { display:inline-flex; align-items:center; padding:9px 13px; border-radius:999px; background:rgba(41,167,239,.1); color:var(--primary2); font-weight:700; font-size:.92rem; }
+    .hero { display:grid; grid-template-columns:1.08fr .92fr; gap:20px; margin-bottom:20px; }
+    .card { padding:28px; }
+    .eyebrow { display:inline-block; padding:8px 12px; border-radius:999px; background:rgba(41,167,239,.1); color:var(--primary2); font-weight:700; font-size:.84rem; }
+    h2 { margin:14px 0 14px; font-size:clamp(2rem,4vw,3.2rem); line-height:1.06; }
+    .copy p { margin:0; line-height:1.8; }
+    .feature-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; margin-top:24px; }
+    .feature { padding:18px; border-radius:22px; border:1px solid var(--line); background:rgba(255,255,255,.78); }
+    .feature strong { display:block; margin-bottom:8px; }
+    .entry { display:flex; flex-direction:column; gap:16px; }
+    .entry-box { padding:22px; border-radius:18px; border:1px solid var(--line); background:#fbfcfe; }
+    .entry-box h3 { margin:0 0 10px; font-size:1.4rem; }
+    .stats { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top:16px; }
+    .stat { padding:14px 16px; border-radius:14px; background:#f4f8fd; }
+    .stat strong { display:block; font-size:1.26rem; color:var(--primary2); }
+    .btn-row { display:flex; flex-wrap:wrap; gap:12px; }
+    .btn { border:none; border-radius:18px; padding:14px 20px; font-weight:700; cursor:pointer; transition:transform .16s ease, box-shadow .16s ease; }
+    .btn:hover,.chip:hover,.scale:hover { transform:translateY(-2px); }
+    .primary { background:linear-gradient(135deg,var(--success),#31c55b); color:#fff; box-shadow:0 12px 28px rgba(69,216,109,.24); }
+    .secondary { background:linear-gradient(135deg,var(--primary),var(--primary2)); color:#fff; box-shadow:0 12px 28px rgba(41,167,239,.2); }
+    .ghost { background:rgba(41,167,239,.09); color:var(--primary2); }
+    .wizard { padding:24px; margin-bottom:20px; }
+    .hidden { display:none !important; }
+    .wizard-head { display:flex; justify-content:space-between; gap:16px; align-items:flex-start; margin-bottom:20px; }
+    .wizard-head h3 { margin:10px 0 10px; font-size:1.85rem; }
+    .track { width:100%; height:12px; border-radius:999px; background:rgba(34,50,72,.08); overflow:hidden; margin-top:14px; }
+    .fill { height:100%; background:linear-gradient(90deg,var(--primary),#5ad0d7); transition:width .2s ease; }
+    .step { border:1px solid var(--line); border-radius:18px; background:#fbfcfe; padding:24px; }
+    .step h4 { margin:0 0 8px; font-size:1.42rem; }
+    .grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin-top:18px; }
+    .field { display:grid; gap:10px; }
+    .field.full { grid-column:1/-1; }
+    .field label { font-weight:700; }
+    .field input,.field select,.field textarea { width:100%; padding:14px 16px; border:1px solid var(--line); border-radius:16px; background:#fff; outline:none; }
+    .field textarea { min-height:110px; resize:vertical; }
+    .choices { display:flex; flex-wrap:wrap; gap:12px; margin-top:10px; }
+    .chip,.scale { border:1px solid var(--line); background:rgba(255,255,255,.9); color:var(--text); cursor:pointer; }
+    .chip { padding:12px 16px; border-radius:16px; }
+    .chip.active { background:var(--primary); color:#fff; border-color:transparent; }
+    .qstack { display:grid; gap:18px; margin-top:16px; }
+    .question { padding:18px; border-radius:16px; border:1px solid var(--line); background:#ffffff; }
+    .question strong { display:block; margin-bottom:12px; }
+    .axis { display:grid; grid-template-columns:1fr auto 1fr; gap:14px; align-items:center; }
+    .axis span { padding:13px 15px; border-radius:18px; border:1px solid var(--line); text-align:center; background:rgba(247,251,255,.92); font-weight:700; }
+    .scale-row { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; margin-top:14px; }
+    .scale { padding:12px 8px; border-radius:14px; font-weight:700; }
+    .scale.active { background:var(--primary); color:#fff; border-color:transparent; }
+    .wizard-foot { display:flex; justify-content:space-between; align-items:center; gap:14px; margin-top:20px; }
+    .summary, .workspace { padding:28px; margin-bottom:20px; }
+    .sum-grid, .workspace-grid, .report-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin-top:18px; }
+    .result, .workspace-card, .report-card { padding:20px; border-radius:16px; background:#ffffff; border:1px solid var(--line); }
+    .result strong, .workspace-card strong, .report-card strong { display:block; margin-bottom:10px; }
+    .tag { display:inline-flex; padding:8px 12px; border-radius:999px; background:rgba(41,167,239,.1); color:var(--primary2); font-weight:700; margin:4px 6px 0 0; }
+    .workspace-card ul, .report-card ul { margin:0; padding-left:20px; color:var(--muted); line-height:1.8; }
+    .workspace-card li, .report-card li { margin:4px 0; }
+    .canvas-wrap { background:#fbfcfe; border-radius:16px; border:1px solid var(--line); padding:18px; margin-top:18px; }
+    .privacy-note { margin-top:14px; padding:14px 16px; border-radius:18px; background:rgba(69,216,109,.12); color:#1d7d3e; font-weight:700; }
+    .workspace-card.warning { background:rgba(255,159,67,.12); }
+    @media (max-width:980px) { .hero,.feature-grid,.grid,.sum-grid,.workspace-grid,.report-grid{grid-template-columns:1fr;} .topbar,.wizard-head,.wizard-foot,.axis{flex-direction:column;align-items:stretch;} }
+    @media (max-width:640px) { .shell{width:min(100% - 18px,100%)} .card,.wizard,.summary{padding:20px} .scale-row{grid-template-columns:1fr;} }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">诊</div>
+        <div>
+          <h1>学生学习台 · 个性诊断入口</h1>
+          <div class="muted" id="welcomeText">引导式收集学生学习画像，结果默认只保存在本地浏览器。</div>
+        </div>
+      </div>
+      <div class="pill" id="storageStatus">本地存储：未完成</div>
+    </header>
+
+    <section class="hero">
+      <article class="card copy">
+        <span class="eyebrow">Guided Diagnosis</span>
+        <h2>逐步引导，完成学生画像采集</h2>
+        <p>这里先完成“个性诊断入口”。流程会依次收集基础信息、学科偏好、学习习惯、性格倾向和心理状态。学生答完之后，系统会把结果长期保存在本地，方便后续学习规划、辅导和知识检验调用。</p>
+        <div class="feature-grid">
+          <div class="feature"><strong>性格测试</strong><div class="muted">采用 A/B 对照和五级倾向评分，接近你给的测评风格。</div></div>
+          <div class="feature"><strong>学科画像</strong><div class="muted">支持兴趣学科、薄弱学科和优先提升科目采集。</div></div>
+          <div class="feature"><strong>本地持久化</strong><div class="muted">刷新页面仍可继续上次进度，不依赖后端也能保存。</div></div>
+        </div>
+      </article>
+
+      <aside class="card entry">
+        <div class="entry-box">
+          <h3>个性诊断入口</h3>
+          <div class="muted">先通过引导式问答收集资料，再生成性格标签、学习建议和风险提醒。</div>
+          <div class="stats">
+            <div class="stat"><strong>5</strong><span>个诊断阶段</span></div>
+            <div class="stat"><strong>本地</strong><span>默认持久化</span></div>
+            <div class="stat"><strong>学科</strong><span>支持多选</span></div>
+            <div class="stat"><strong>心理</strong><span>状态自评</span></div>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn primary" id="startBtn">立即开始诊断</button>
+          <button class="btn secondary hidden" id="resumeBtn">继续上次诊断</button>
+          <button class="btn ghost hidden" id="resetBtn">清空本地记录</button>
+        </div>
+        <div class="muted" id="draftNote">暂未发现本地草稿。开始后会自动保存。</div>
+      </aside>
+    </section>
+
+    <section class="wizard hidden" id="wizard">
+      <div class="wizard-head">
+        <div>
+          <span class="eyebrow">Step Flow</span>
+          <h3 id="stepTitle"></h3>
+          <div class="muted" id="stepMeta"></div>
+          <div class="track"><div class="fill" id="progressFill"></div></div>
+        </div>
+        <div class="btn-row"><button class="btn ghost" id="saveBtn">立即保存</button></div>
+      </div>
+      <div class="step" id="stepContainer"></div>
+      <div class="wizard-foot">
+        <div class="muted" id="stepHelper">系统会实时写入浏览器本地存储。</div>
+        <div class="btn-row">
+          <button class="btn ghost" id="prevBtn">上一题</button>
+          <button class="btn secondary" id="nextBtn">下一题</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="summary">
+      <span class="eyebrow">Local Snapshot</span>
+      <h3 style="margin:14px 0 8px;font-size:1.8rem;">本地诊断摘要</h3>
+      <div class="muted" id="summaryText">还没有完成诊断。开始后会在这里展示最近一次保存的结果摘要。</div>
+      <div class="sum-grid" id="summaryGrid"></div>
+    </section>
+
+    <section class="workspace hidden" id="workspace">
+      <span class="eyebrow">Student Workspace</span>
+      <h3 style="margin:14px 0 8px;font-size:1.8rem;">学生主学习台</h3>
+      <div class="muted" id="workspaceText">诊断完成后，推荐内容会根据学生画像自动刷新。</div>
+      <div class="workspace-grid" id="workspaceGrid"></div>
+      <div class="privacy-note">本地隐私说明：学生画像、推荐内容和画像图谱只保存在本地浏览器，不会直接同步给教师端。</div>
+    </section>
+
+    <section class="workspace hidden" id="reportSection">
+      <span class="eyebrow">Persona Report</span>
+      <h3 style="margin:14px 0 8px;font-size:1.8rem;">正式学生画像报告</h3>
+      <div class="muted" id="reportText">系统会根据诊断结果生成正式的画像分析、风险等级和推荐学科路径。</div>
+      <div class="report-grid" id="reportGrid"></div>
+      <div class="canvas-wrap">
+        <strong style="display:block;margin-bottom:12px;">本地用户画像图谱</strong>
+        <canvas id="personaCanvas" width="960" height="360" style="width:100%;height:auto;"></canvas>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const DRAFT_KEY = 'eduMasDiagnosisDraft';
+    const RESULT_KEY = 'eduMasDiagnosisResult';
+    const PROFILE_KEY = 'eduMasProfile';
+    const PERSONA_KEY = 'eduMasLocalPersona';
+    const subjects = ['语文','数学','英语','物理','化学','生物','历史','地理','政治','信息技术'];
+    const habits = ['喜欢先看例题','喜欢自己先尝试','更适合视频讲解','更适合文字阅读','需要频繁互动反馈','喜欢安静独立完成'];
+    const goals = ['提高考试成绩','找到擅长学科','改善学习习惯','缓解学习压力','准备竞赛或升学'];
+    const emotions = ['最近状态不错','偶尔焦虑但能调整','学习压力比较大','经常疲惫或失眠','需要老师更多关注'];
+    const personalityQuestions = [
+      ['ei_1','在新的学习小组中，你通常会更快主动发言。','非常像我','更愿意先观察'],
+      ['sn_1','学习时你更喜欢先抓具体例题，而不是抽象概念。','偏向具体例题','偏向理论框架'],
+      ['tf_1','做学习决策时，你更在意逻辑是否充分。','更看重逻辑','更看重感受'],
+      ['jp_1','你会提前安排学习计划并按节奏推进。','更喜欢计划','更喜欢灵活调整'],
+      ['ei_2','遇到难题时，你更愿意主动向同学或老师求助。','会主动沟通','会先自己消化'],
+      ['sn_2','面对新知识时，你更容易联想到未来应用场景。','更关注应用','更关注已知事实'],
+      ['tf_2','团队合作里，你更常扮演提醒规则和标准的角色。','偏规则判断','偏照顾氛围'],
+      ['jp_2','任务临近截止时，你仍能保持条理而不慌乱。','非常像我','更容易临场冲刺']
+    ];
+    const steps = [
+      { key:'profile', title:'基础信息', helper:'先确定学生年级、目标和背景信息。' },
+      { key:'subjects', title:'学科偏好', helper:'收集擅长、兴趣和薄弱学科。' },
+      { key:'habits', title:'学习习惯', helper:'帮助系统判断更适合怎样的辅导方式。' },
+      { key:'personality', title:'性格倾向测试', helper:'采用 A/B 对照加五级评分。' },
+      { key:'wellbeing', title:'心理状态与确认', helper:'补充近期状态，并生成本地画像。' }
+    ];
+    let currentStep = 0;
+    let draft = emptyDraft();
+
+    function emptyDraft() {
+      return {
+        profile:{ name:'', grade:'', gender:'', goal:'', note:'' },
+        subjects:{ favorite:[], weak:[], target:'' },
+        habits:{ selected:[], pace:'', weekly:'', focus:[] },
+        personality:{},
+        wellbeing:{ mood:'', stress:'', support:'', comment:'' },
+        progress:0, updatedAt:''
+      };
+    }
+
+    function init() {
+      const profile = readJson(PROFILE_KEY);
+      if (profile && profile.displayName) document.getElementById('welcomeText').textContent = profile.displayName + '，欢迎回来。这里会逐步收集你的学习画像，并默认保存在本地。';
+      const localDraft = readJson(DRAFT_KEY);
+      if (localDraft) draft = Object.assign(emptyDraft(), localDraft);
+      document.getElementById('startBtn').onclick = function () { draft = emptyDraft(); currentStep = 0; persistDraft(); openWizard(); };
+      document.getElementById('resumeBtn').onclick = function () { const saved = readJson(DRAFT_KEY); if (saved) { draft = Object.assign(emptyDraft(), saved); currentStep = Math.min(saved.progress || 0, steps.length - 1); openWizard(); } };
+      document.getElementById('resetBtn').onclick = resetLocal;
+      document.getElementById('prevBtn').onclick = function () { if (currentStep > 0) { currentStep--; renderStep(); } };
+      document.getElementById('nextBtn').onclick = nextStep;
+      document.getElementById('saveBtn').onclick = function () { persistDraft(); refreshState(); };
+      refreshState();
+      renderStep();
+      const savedResult = readJson(RESULT_KEY);
+      renderSummary(savedResult);
+      renderWorkspace(savedResult);
+      renderReport(savedResult);
+    }
+
+    function refreshState() {
+      const localDraft = readJson(DRAFT_KEY);
+      const localResult = readJson(RESULT_KEY);
+      document.getElementById('resumeBtn').classList.toggle('hidden', !localDraft);
+      document.getElementById('resetBtn').classList.toggle('hidden', !localDraft && !localResult);
+      document.getElementById('draftNote').textContent = localDraft ? '已发现本地草稿，最近保存于 ' + (localDraft.updatedAt ? new Date(localDraft.updatedAt).toLocaleString('zh-CN') : '刚刚') + '。' : '暂未发现本地草稿。开始后会自动保存。';
+      document.getElementById('storageStatus').textContent = localResult ? '本地存储：已完成' : (localDraft ? '本地存储：草稿中' : '本地存储：未完成');
+    }
+
+    function openWizard() { document.getElementById('wizard').classList.remove('hidden'); renderStep(); window.scrollTo({ top: document.getElementById('wizard').offsetTop - 18, behavior:'smooth' }); }
+    function persistDraft() { draft.updatedAt = new Date().toISOString(); draft.progress = currentStep; localStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); refreshState(); }
+    function resetLocal() {
+      localStorage.removeItem(DRAFT_KEY);
+      localStorage.removeItem(RESULT_KEY);
+      localStorage.removeItem(PERSONA_KEY);
+      draft = emptyDraft();
+      currentStep = 0;
+      document.getElementById('wizard').classList.add('hidden');
+      renderSummary(null);
+      renderWorkspace(null);
+      renderReport(null);
+      refreshState();
+    }
+
+    function renderStep() {
+      const step = steps[currentStep];
+      document.getElementById('stepTitle').textContent = step.title;
+      document.getElementById('stepMeta').textContent = '第 ' + (currentStep + 1) + ' 步 / 共 ' + steps.length + ' 步';
+      document.getElementById('stepHelper').textContent = step.helper;
+      document.getElementById('progressFill').style.width = ((currentStep + 1) / steps.length * 100) + '%';
+      document.getElementById('prevBtn').disabled = currentStep === 0;
+      document.getElementById('nextBtn').textContent = currentStep === steps.length - 1 ? '完成并生成画像' : '下一题';
+      document.getElementById('stepContainer').innerHTML = renderStepHtml();
+      bindStep();
+    }
+
+    function renderStepHtml() {
+      if (currentStep === 0) return '<h4>先建立学生基础档案</h4><div class="muted">可以先收集姓名、年级、主要学习目标和补充说明。</div><div class="grid"><div class="field"><label>学生姓名</label><input data-field="profile.name" value="' + esc(draft.profile.name) + '" placeholder="例如：李明"></div><div class="field"><label>所在年级</label><select data-field="profile.grade">' + options(['','小学','初一','初二','初三','高一','高二','高三'], draft.profile.grade, '请选择年级') + '</select></div><div class="field"><label>测试版本</label><select data-field="profile.gender">' + options(['','男生版','女生版','通用版'], draft.profile.gender, '请选择版本') + '</select></div><div class="field"><label>核心目标</label><select data-field="profile.goal">' + options([''].concat(goals), draft.profile.goal, '请选择目标') + '</select></div><div class="field full"><label>补充说明</label><textarea data-field="profile.note" placeholder="例如：最近想提升数学和英语，考试压力较大。">' + esc(draft.profile.note) + '</textarea></div></div>';
+      if (currentStep === 1) return '<h4>记录学科偏好与薄弱点</h4><div class="muted">可以多选，用于后续学习规划与个性化辅导。</div><div class="field full"><label>我感兴趣或更喜欢的学科</label><div class="choices">' + subjects.map(function (s) { return chip('subjects.favorite', s, draft.subjects.favorite.indexOf(s) !== -1); }).join('') + '</div></div><div class="field full" style="margin-top:18px;"><label>我目前较弱的学科</label><div class="choices">' + subjects.map(function (s) { return chip('subjects.weak', s, draft.subjects.weak.indexOf(s) !== -1); }).join('') + '</div></div><div class="field full" style="margin-top:18px;"><label>最希望优先提升的科目</label><select data-field="subjects.target">' + options([''].concat(subjects), draft.subjects.target, '请选择重点科目') + '</select></div>';
+      if (currentStep === 2) return '<h4>了解你的学习习惯</h4><div class="muted">帮助系统判断更适合怎样的辅导形式和节奏。</div><div class="field full"><label>更符合你的学习方式</label><div class="choices">' + habits.map(function (s) { return chip("habits.selected", s, draft.habits.selected.indexOf(s) !== -1); }).join('') + '</div></div><div class="grid"><div class="field"><label>偏好的学习节奏</label><select data-field="habits.pace">' + options(['','快节奏冲刺','稳步推进','先易后难','先难后易'], draft.habits.pace, '请选择学习节奏') + '</select></div><div class="field"><label>每周可投入学习时长</label><select data-field="habits.weekly">' + options(['','3小时以内','3-6小时','6-10小时','10小时以上'], draft.habits.weekly, '请选择时长') + '</select></div><div class="field full"><label>当前最想解决的问题</label><div class="choices">' + goals.map(function (s) { return chip("habits.focus", s, draft.habits.focus.indexOf(s) !== -1); }).join('') + '</div></div></div>';
+      if (currentStep === 3) return '<h4>引导式性格测试</h4><div class="muted">请按第一感觉作答，左到右表示从“非常像左侧”到“非常像右侧”。</div><div class="qstack">' + personalityQuestions.map(function (q) { return '<div class="question"><strong>' + q[1] + '</strong><div class="axis"><span>' + q[2] + '</span><div style="text-align:center;color:var(--primary);font-weight:800;">|</div><span>' + q[3] + '</span></div><div class="scale-row">' + [['非常像左侧',1],['比较像左侧',2],['居中',3],['比较像右侧',4],['非常像右侧',5]].map(function (item) { return '<button type="button" class="scale ' + (draft.personality[q[0]] === item[1] ? 'active' : '') + '" data-scale="' + q[0] + '" data-score="' + item[1] + '">' + item[0] + '</button>'; }).join('') + '</div></div>'; }).join('') + '</div>';
+      return '<h4>心理状态与完成确认</h4><div class="muted">最后补充近期学习状态和支持需求，并生成本地摘要。</div><div class="grid"><div class="field"><label>最近的整体状态</label><select data-field="wellbeing.mood">' + options([''].concat(emotions), draft.wellbeing.mood, '请选择近期状态') + '</select></div><div class="field"><label>当前压力水平</label><select data-field="wellbeing.stress">' + options(['','低','中','偏高','很高'], draft.wellbeing.stress, '请选择压力水平') + '</select></div><div class="field"><label>希望得到的支持强度</label><select data-field="wellbeing.support">' + options(['','轻量提醒','规律跟进','重点盯防','需要老师及时介入'], draft.wellbeing.support, '请选择支持方式') + '</select></div><div class="field"><label>重点备注</label><input data-field="wellbeing.comment" value="' + esc(draft.wellbeing.comment) + '" placeholder="例如：最近数学考试波动大，睡眠一般。"></div></div>';
+    }
+
+    function bindStep() {
+      document.querySelectorAll('[data-field]').forEach(function (el) {
+        el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', function (e) { setValue(el.dataset.field, e.target.value); persistDraft(); });
+      });
+      document.querySelectorAll('[data-toggle]').forEach(function (btn) {
+        btn.onclick = function () {
+          const list = getValue(btn.dataset.toggle) || [];
+          const value = btn.dataset.value;
+          setValue(btn.dataset.toggle, list.indexOf(value) !== -1 ? list.filter(function (v) { return v !== value; }) : list.concat([value]));
+          persistDraft();
+          renderStep();
+        };
+      });
+      document.querySelectorAll('[data-scale]').forEach(function (btn) {
+        btn.onclick = function () { draft.personality[btn.dataset.scale] = Number(btn.dataset.score); persistDraft(); renderStep(); };
+      });
+    }
+
+    function nextStep() {
+      const error = validate();
+      if (error) { alert(error); return; }
+      if (currentStep < steps.length - 1) { currentStep++; persistDraft(); renderStep(); return; }
+      const result = buildResult();
+      localStorage.setItem(RESULT_KEY, JSON.stringify(result));
+      localStorage.setItem(PERSONA_KEY, JSON.stringify(result.personaChart));
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(Object.assign({}, draft, { updatedAt:new Date().toISOString(), progress:steps.length - 1 })));
+      renderSummary(result);
+      renderWorkspace(result);
+      renderReport(result);
+      refreshState();
+      alert('个性诊断已完成，学生主学习台与本地画像报告已生成。');
+    }
+
+    function validate() {
+      if (currentStep === 0 && (!draft.profile.name || !draft.profile.grade || !draft.profile.goal)) return '请先填写姓名、年级和核心目标。';
+      if (currentStep === 1 && (!draft.subjects.favorite.length || !draft.subjects.target)) return '请至少选择一个感兴趣学科，并指定一个优先提升科目。';
+      if (currentStep === 2 && (!draft.habits.selected.length || !draft.habits.pace || !draft.habits.weekly)) return '请补充学习方式、学习节奏和每周可投入时长。';
+      if (currentStep === 3 && personalityQuestions.some(function (q) { return !draft.personality[q[0]]; })) return '请先完成所有性格倾向题。';
+      if (currentStep === 4 && (!draft.wellbeing.mood || !draft.wellbeing.stress || !draft.wellbeing.support)) return '请补充近期状态、压力水平和支持需求。';
+      return '';
+    }
+
+    function buildResult() {
+      const type = personalityType();
+      const mode = learningMode();
+      const risk = riskLevel();
+      const path = recommendPath();
+      const chart = buildPersonaChart();
+      return {
+        studentName:draft.profile.name,
+        grade:draft.profile.grade,
+        targetSubject:draft.subjects.target,
+        personalityType:type,
+        learningMode:mode,
+        stressLevel:draft.wellbeing.stress,
+        supportNeed:draft.wellbeing.support,
+        favoriteSubjects:draft.subjects.favorite,
+        weakSubjects:draft.subjects.weak,
+        updatedAt:new Date().toLocaleString('zh-CN'),
+        riskLevel:risk,
+        tags:[type, mode, draft.profile.goal + '导向', draft.subjects.target + '优先', risk + '风险关注'],
+        suggestions:buildSuggestions(mode, risk),
+        recommendationCards:buildRecommendationCards(mode, risk, path),
+        report:buildFormalReport(type, mode, risk, path),
+        personaChart:chart
+      };
+    }
+
+    function buildSuggestions(mode, risk) {
+      return [
+        '建议后续辅导优先采用“' + mode + '”策略组织内容。',
+        '优先为 ' + (draft.subjects.target || '目标学科') + ' 配置分层练习与知识检验。',
+        draft.subjects.weak.length ? '薄弱学科 ' + draft.subjects.weak.join('、') + ' 可纳入近期补强计划。' : '当前未标记明显薄弱学科。',
+        risk !== '平稳' ? '建议把心理状态纳入本地风险提醒，并增加阶段性自检。' : '当前状态总体平稳，可进入常规个性化辅导流程。'
+      ];
+    }
+
+    function buildRecommendationCards(mode, risk, path) {
+      return [
+        {
+          title:'推荐学习任务',
+          items:[
+            '围绕 ' + draft.subjects.target + ' 开启 20 分钟微任务训练',
+            '先完成 1 组基础题，再进入 1 组提升题',
+            '学习完成后做一次知识检验小测'
+          ]
+        },
+        {
+          title:'推荐辅导方式',
+          items:[
+            mode + ' 讲解优先',
+            draft.habits.pace + ' 节奏安排',
+            '根据 ' + (draft.habits.focus[0] || draft.profile.goal) + ' 进行任务拆分'
+          ]
+        },
+        {
+          title:'风险提醒',
+          items:[
+            '风险等级：' + risk,
+            '当前压力：' + draft.wellbeing.stress,
+            '支持方式：' + draft.wellbeing.support
+          ]
+        },
+        {
+          title:'推荐学科路径',
+          items:path
+        }
+      ];
+    }
+
+    function buildFormalReport(type, mode, risk, path) {
+      return {
+        styleTags:[
+          type + ' 型倾向',
+          mode,
+          draft.habits.pace + ' 节奏',
+          (draft.subjects.favorite[0] || draft.subjects.target) + ' 兴趣驱动'
+        ],
+        guidance:[
+          '先用 ' + mode + ' 方式引入，再做结构化知识梳理。',
+          '每周基于 ' + draft.subjects.target + ' 生成分层任务与阶段反馈。',
+          '在本地持续记录压力与学习波动，避免一次性重负荷冲刺。'
+        ],
+        riskSummary:[
+          '综合风险等级：' + risk,
+          '近期情绪：' + draft.wellbeing.mood,
+          '建议支持强度：' + draft.wellbeing.support
+        ],
+        route:path,
+        privacy:[
+          '画像报告只保存在学生本地浏览器。',
+          '教师端不直接读取此本地图像和报告。',
+          '后续如要上传，应先经过本地隐私网关处理。'
+        ]
+      };
+    }
+
+    function renderSummary(result) {
+      const box = document.getElementById('summaryGrid');
+      if (!result) { box.innerHTML = ''; document.getElementById('summaryText').textContent = '还没有完成诊断。开始后会在这里展示最近一次保存的结果摘要。'; return; }
+      document.getElementById('summaryText').textContent = '最近更新时间：' + result.updatedAt + '。以下结果保存在当前浏览器本地，可供后续学生画像与学习规划使用。';
+      box.innerHTML =
+        '<article class="result"><strong>学生档案</strong><div>' + esc(result.studentName) + ' · ' + esc(result.grade) + '</div><div class="muted">重点目标：' + esc(draft.profile.goal) + '</div></article>' +
+        '<article class="result"><strong>性格倾向</strong><div>' + result.personalityType + '</div><div class="muted">学习模式：' + result.learningMode + '</div></article>' +
+        '<article class="result"><strong>学科画像</strong><div>重点科目：' + esc(result.targetSubject) + '</div><div class="muted">兴趣：' + esc(result.favoriteSubjects.join('、') || '未填写') + '</div></article>' +
+        '<article class="result"><strong>心理状态</strong><div>压力：' + esc(result.stressLevel) + '</div><div class="muted">支持需求：' + esc(result.supportNeed) + '</div></article>' +
+        '<article class="result" style="grid-column:1/-1;"><strong>标签汇总</strong><div>' + result.tags.map(function (tag) { return '<span class="tag">' + esc(tag) + '</span>'; }).join('') + '</div></article>' +
+        '<article class="result" style="grid-column:1/-1;"><strong>后续建议</strong><div class="muted">' + esc(result.suggestions.join(' ')) + '</div></article>';
+    }
+
+    function renderWorkspace(result) {
+      const section = document.getElementById('workspace');
+      const grid = document.getElementById('workspaceGrid');
+      if (!result) {
+        section.classList.add('hidden');
+        grid.innerHTML = '';
+        return;
+      }
+      section.classList.remove('hidden');
+      document.getElementById('workspaceText').textContent = '以下推荐任务和内容已经根据本地学生画像自动生成，不同步到教师端。';
+      grid.innerHTML = result.recommendationCards.map(function (card, index) {
+        return '<article class="workspace-card ' + (index === 2 ? 'warning' : '') + '"><strong>' + esc(card.title) + '</strong><ul>' +
+          card.items.map(function (item) { return '<li>' + esc(item) + '</li>'; }).join('') +
+          '</ul></article>';
+      }).join('');
+    }
+
+    function renderReport(result) {
+      const section = document.getElementById('reportSection');
+      const grid = document.getElementById('reportGrid');
+      if (!result) {
+        section.classList.add('hidden');
+        grid.innerHTML = '';
+        clearCanvas();
+        return;
+      }
+      section.classList.remove('hidden');
+      document.getElementById('reportText').textContent = '正式画像报告会结合学习风格标签、辅导建议、风险等级和推荐学科路径生成。';
+      grid.innerHTML =
+        '<article class="report-card"><strong>学习风格标签</strong><div>' + result.report.styleTags.map(function (tag) { return '<span class="tag">' + esc(tag) + '</span>'; }).join('') + '</div></article>' +
+        '<article class="report-card"><strong>辅导建议</strong><ul>' + result.report.guidance.map(function (item) { return '<li>' + esc(item) + '</li>'; }).join('') + '</ul></article>' +
+        '<article class="report-card"><strong>风险等级</strong><ul>' + result.report.riskSummary.map(function (item) { return '<li>' + esc(item) + '</li>'; }).join('') + '</ul></article>' +
+        '<article class="report-card"><strong>推荐学科路径</strong><ul>' + result.report.route.map(function (item) { return '<li>' + esc(item) + '</li>'; }).join('') + '</ul></article>' +
+        '<article class="report-card" style="grid-column:1/-1;"><strong>隐私边界</strong><ul>' + result.report.privacy.map(function (item) { return '<li>' + esc(item) + '</li>'; }).join('') + '</ul></article>';
+      drawPersona(result.personaChart);
+    }
+
+    function buildPersonaChart() {
+      return {
+        labels:['表达主动性', '抽象理解', '逻辑判断', '计划执行', '情绪稳定', '学科自信'],
+        values:[
+          normalizeInverse(scoreFromPair(['ei_1', 'ei_2'])),
+          normalizeDirect(scoreFromPair(['sn_1', 'sn_2'])),
+          normalizeInverse(scoreFromPair(['tf_1', 'tf_2'])),
+          normalizeInverse(scoreFromPair(['jp_1', 'jp_2'])),
+          stressToStable(draft.wellbeing.stress),
+          subjectConfidence()
+        ]
+      };
+    }
+
+    function recommendPath() {
+      const start = draft.subjects.target || draft.subjects.favorite[0] || '数学';
+      const backup = draft.subjects.favorite[1] || draft.subjects.weak[0] || '英语';
+      return [
+        start + ' 基础诊断 -> ' + start + ' 分层训练 -> ' + start + ' 阶段小测',
+        backup + ' 巩固复习 -> 错题回顾 -> 重点概念再理解',
+        '心理状态自检 -> 学习节奏微调 -> 下一轮计划更新'
+      ];
+    }
+
+    function personalityType() {
+      function pair(keys) { return keys.map(function (k) { return Number(draft.personality[k] || 3); }).reduce(function (a,b) { return a + b; }, 0) / keys.length; }
+      return (pair(['ei_1','ei_2']) <= 3 ? 'E' : 'I') + (pair(['sn_1','sn_2']) <= 3 ? 'S' : 'N') + (pair(['tf_1','tf_2']) <= 3 ? 'T' : 'F') + (pair(['jp_1','jp_2']) <= 3 ? 'J' : 'P');
+    }
+    function learningMode() {
+      const set = new Set(draft.habits.selected);
+      if (set.has('更适合视频讲解')) return '视觉引导型';
+      if (set.has('更适合文字阅读')) return '阅读整理型';
+      if (set.has('需要频繁互动反馈')) return '互动反馈型';
+      if (set.has('喜欢自己先尝试')) return '自主探索型';
+      return '稳步推进型';
+    }
+    function riskLevel() {
+      if (draft.wellbeing.stress === '很高' || draft.wellbeing.mood === '需要老师更多关注') return '较高';
+      if (draft.wellbeing.stress === '偏高' || draft.wellbeing.mood === '学习压力比较大') return '中等';
+      return '平稳';
+    }
+    function scoreFromPair(keys) { return keys.map(function (k) { return Number(draft.personality[k] || 3); }).reduce(function (a,b) { return a + b; }, 0) / keys.length; }
+    function normalizeInverse(score) { return Math.round((6 - score) * 20); }
+    function normalizeDirect(score) { return Math.round(score * 20 - 20); }
+    function stressToStable(stress) { if (stress === '很高') return 30; if (stress === '偏高') return 48; if (stress === '中') return 66; return 84; }
+    function subjectConfidence() { const favorite = draft.subjects.favorite.length; const weak = draft.subjects.weak.length; return Math.max(35, Math.min(92, 55 + favorite * 8 - weak * 6)); }
+    function drawPersona(chart) {
+      const canvas = document.getElementById('personaCanvas');
+      const ctx = canvas.getContext('2d');
+      const width = canvas.width;
+      const height = canvas.height;
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, width, height);
+      const centerX = 260;
+      const centerY = 180;
+      const radius = 110;
+      const count = chart.labels.length;
+      for (let ring = 1; ring <= 4; ring += 1) {
+        ctx.beginPath();
+        for (let i = 0; i < count; i += 1) {
+          const angle = (-Math.PI / 2) + (Math.PI * 2 * i / count);
+          const x = centerX + Math.cos(angle) * radius * ring / 4;
+          const y = centerY + Math.sin(angle) * radius * ring / 4;
+          if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.strokeStyle = 'rgba(23,127,209,0.12)';
+        ctx.stroke();
+      }
+      ctx.beginPath();
+      for (let axis = 0; axis < count; axis += 1) {
+        const angleAxis = (-Math.PI / 2) + (Math.PI * 2 * axis / count);
+        ctx.moveTo(centerX, centerY);
+        ctx.lineTo(centerX + Math.cos(angleAxis) * radius, centerY + Math.sin(angleAxis) * radius);
+      }
+      ctx.strokeStyle = 'rgba(23,127,209,0.16)';
+      ctx.stroke();
+      ctx.beginPath();
+      for (let j = 0; j < count; j += 1) {
+        const anglePoint = (-Math.PI / 2) + (Math.PI * 2 * j / count);
+        const valueRadius = radius * chart.values[j] / 100;
+        const px = centerX + Math.cos(anglePoint) * valueRadius;
+        const py = centerY + Math.sin(anglePoint) * valueRadius;
+        if (j === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(41,167,239,0.24)';
+      ctx.strokeStyle = '#29a7ef';
+      ctx.lineWidth = 2;
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#223248';
+      ctx.font = '14px "Noto Sans SC"';
+      for (let k = 0; k < count; k += 1) {
+        const angleLabel = (-Math.PI / 2) + (Math.PI * 2 * k / count);
+        const lx = centerX + Math.cos(angleLabel) * (radius + 26);
+        const ly = centerY + Math.sin(angleLabel) * (radius + 26);
+        ctx.fillText(chart.labels[k], lx - 32, ly);
+      }
+      const startX = 520;
+      ctx.fillStyle = '#223248';
+      ctx.font = '20px "Noto Sans SC"';
+      ctx.fillText('本地画像指标', startX, 54);
+      ctx.font = '14px "Noto Sans SC"';
+      chart.labels.forEach(function (label, index) {
+        const top = 92 + index * 40;
+        ctx.fillStyle = '#5b6f84';
+        ctx.fillText(label, startX, top);
+        ctx.fillStyle = 'rgba(23,127,209,0.12)';
+        ctx.fillRect(startX + 110, top - 12, 260, 14);
+        ctx.fillStyle = '#29a7ef';
+        ctx.fillRect(startX + 110, top - 12, 260 * chart.values[index] / 100, 14);
+        ctx.fillStyle = '#223248';
+        ctx.fillText(String(chart.values[index]), startX + 380, top);
+      });
+    }
+    function clearCanvas() { const canvas = document.getElementById('personaCanvas'); const ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, canvas.width, canvas.height); }
+    function options(arr, selected, placeholder) { return arr.map(function (v, i) { const value = i === 0 ? '' : v; return '<option value="' + value + '" ' + (value === selected ? 'selected' : '') + '>' + (i === 0 ? placeholder : v) + '</option>'; }).join(''); }
+    function chip(path, value, active) { return '<button type="button" class="chip ' + (active ? 'active' : '') + '" data-toggle="' + path + '" data-value="' + value + '">' + value + '</button>'; }
+    function setValue(path, value) { const keys = path.split('.'); let node = draft; for (let i = 0; i < keys.length - 1; i++) node = node[keys[i]]; node[keys[keys.length - 1]] = value; }
+    function getValue(path) { return path.split('.').reduce(function (acc, key) { return acc && acc[key]; }, draft); }
+    function readJson(key) { try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : null; } catch (e) { return null; } }
+    function esc(v) { return String(v || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+    init();
+  </script>
+</body>
+</html>

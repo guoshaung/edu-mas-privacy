@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>学生功能总览</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root { --bg:#f6f8fb; --panel:#fff; --line:#dbe3ee; --text:#243447; --muted:#6b7c93; --primary:#2f80ed; --soft:#eef4ff; --shadow:0 12px 32px rgba(36,52,71,.08); }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font-family:"Noto Sans SC",sans-serif; }
+    .shell { width:min(1160px, calc(100% - 28px)); margin:0 auto; padding:24px 0 40px; }
+    .topbar,.card,.hero { background:var(--panel); border:1px solid var(--line); border-radius:20px; box-shadow:var(--shadow); }
+    .topbar { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:18px 22px; margin-bottom:20px; }
+    .muted { color:var(--muted); }
+    .pill { display:inline-flex; align-items:center; padding:8px 12px; border-radius:999px; background:var(--soft); color:var(--primary); font-weight:700; }
+    .hero { padding:28px; margin-bottom:20px; }
+    .hero h1 { margin:0 0 12px; font-size:2.2rem; }
+    .grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:18px; }
+    .card { padding:22px; }
+    .icon { width:52px; height:52px; border-radius:14px; display:grid; place-items:center; background:var(--soft); color:var(--primary); font-weight:700; margin-bottom:14px; }
+    .card h2 { margin:0 0 10px; font-size:1.25rem; }
+    .card p { margin:0 0 14px; color:var(--muted); line-height:1.8; }
+    .tag { display:inline-flex; padding:6px 10px; border-radius:999px; background:var(--soft); color:var(--primary); font-size:.88rem; font-weight:700; margin-right:6px; margin-bottom:6px; }
+    .btn { display:inline-block; margin-top:16px; padding:10px 14px; border-radius:12px; background:var(--primary); color:#fff; text-decoration:none; font-weight:700; }
+    @media (max-width:900px) { .grid{grid-template-columns:1fr;} .topbar{flex-direction:column;align-items:stretch;} }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div>
+        <div style="font-size:1.5rem;font-weight:700;">学生功能总览</div>
+        <div class="muted" id="welcomeText">先从四个模块中选择一个，再进入对应的具体功能页面。</div>
+      </div>
+      <div class="pill">四个功能模块</div>
+    </header>
+
+    <section class="hero">
+      <h1>诊断、规划、辅导、检验</h1>
+      <div class="muted">统一登录后，先进入这里做模块选择。后续每个模块都可以继续接入你的多智能体系统。</div>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <div class="icon">诊</div>
+        <h2>个性诊断</h2>
+        <p>进入引导式问答，采集学生画像、本地心理状态与学习偏好，生成本地画像报告。</p>
+        <div><span class="tag">本地持久化</span><span class="tag">画像生成</span></div>
+        <a class="btn" href="student_diagnosis.html">进入模块</a>
+      </article>
+
+      <article class="card">
+        <div class="icon">规</div>
+        <h2>学习规划</h2>
+        <p>根据诊断结果制定目标科目优先级、周计划、每日任务节奏和推荐学习路径。</p>
+        <div><span class="tag">学习目标</span><span class="tag">周计划</span></div>
+        <a class="btn" href="student_planning.html">进入模块</a>
+      </article>
+
+      <article class="card">
+        <div class="icon">辅</div>
+        <h2>自适应辅导</h2>
+        <p>基于学习风格和目标学科给出更合适的辅导建议、讲解方式和交互策略。</p>
+        <div><span class="tag">辅导策略</span><span class="tag">内容推荐</span></div>
+        <a class="btn" href="student_tutoring.html">进入模块</a>
+      </article>
+
+      <article class="card">
+        <div class="icon">检</div>
+        <h2>知识检验</h2>
+        <p>围绕当前重点学科生成阶段小测、错题回顾和知识点掌握度检查。</p>
+        <div><span class="tag">阶段小测</span><span class="tag">掌握分析</span></div>
+        <a class="btn" href="student_assessment.html">进入模块</a>
+      </article>
+    </section>
+  </div>
+
+  <script>
+    try {
+      const profile = JSON.parse(sessionStorage.getItem("eduMasProfile") || "null");
+      if (profile && profile.displayName) {
+        document.getElementById("welcomeText").textContent = profile.displayName + "，先从四个模块中选择一个，再进入对应的具体功能页面。";
+      }
+    } catch (e) {}
+  </script>
+</body>
+</html>

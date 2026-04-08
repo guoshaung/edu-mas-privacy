@@ -3,22 +3,478 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>自适应辅导</title>
+  <title>&#33258;&#36866;&#24212;&#36741;&#23548;</title>
   <style>
-    body { margin:0; background:#f6f8fb; color:#243447; font-family:"Noto Sans SC",sans-serif; }
-    .shell { width:min(980px, calc(100% - 28px)); margin:0 auto; padding:24px 0 40px; }
-    .card { background:#fff; border:1px solid #dbe3ee; border-radius:20px; padding:24px; box-shadow:0 12px 32px rgba(36,52,71,.08); }
-    .muted { color:#6b7c93; line-height:1.8; }
-    .btn { display:inline-block; margin-top:12px; padding:10px 14px; border-radius:12px; background:#2f80ed; color:#fff; text-decoration:none; font-weight:700; }
+    :root {
+      --bg: #f6f8fb;
+      --card: #ffffff;
+      --text: #243447;
+      --muted: #6b7c93;
+      --line: #dbe3ee;
+      --primary: #2563eb;
+      --soft: #eef4ff;
+      --accent: #166534;
+      --warn: #b45309;
+      --danger: #b42318;
+      --shadow: 0 12px 32px rgba(36, 52, 71, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    .shell { width: min(1180px, calc(100% - 28px)); margin: 0 auto; padding: 24px 0 40px; }
+    .topbar, .card, .hero { background: #fff; border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 18px 22px; margin-bottom: 20px; }
+    .topbar a { color: #244e7a; text-decoration: none; font-weight: 600; }
+    .hero { padding: 22px; margin-bottom: 20px; }
+    .hero h1 { margin: 0 0 12px; font-size: 2rem; }
+    .hero p, .muted { color: var(--muted); line-height: 1.8; }
+    .hero-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 18px; margin-top: 18px; }
+    .grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 18px; }
+    .stack { display: grid; gap: 18px; }
+    .card { padding: 22px; }
+    .card h2 { margin: 0 0 12px; font-size: 1.2rem; }
+    .tag { display: inline-flex; padding: 6px 10px; border-radius: 999px; background: var(--soft); color: var(--primary); font-size: .88rem; font-weight: 700; margin-right: 8px; margin-bottom: 8px; }
+    .tag.warn { background: #fff7ed; color: var(--warn); }
+    .tag.success { background: #ecfdf3; color: var(--accent); }
+    .list { display: grid; gap: 12px; margin-top: 14px; }
+    .item { border: 1px solid var(--line); border-radius: 16px; padding: 14px; background: #fbfdff; }
+    .item strong { display: block; margin-bottom: 8px; }
+    .meta-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .meta-box { border: 1px solid var(--line); border-radius: 14px; padding: 14px; background: #fcfcfd; }
+    .meta-box strong { display: block; margin-bottom: 8px; }
+    .chat-window { border: 1px solid var(--line); border-radius: 18px; background: #fbfdff; padding: 14px; min-height: 420px; max-height: 620px; overflow: auto; }
+    .bubble { max-width: 88%; padding: 12px 14px; border-radius: 16px; margin-bottom: 12px; white-space: pre-wrap; line-height: 1.7; }
+    .bubble.user { margin-left: auto; background: #e8f0ff; color: #173a70; border-bottom-right-radius: 6px; }
+    .bubble.ai { background: #eefbf3; color: #13452c; border-bottom-left-radius: 6px; }
+    .bubble.system { background: #fff7ed; color: #8a4b08; border-bottom-left-radius: 6px; }
+    .controls { display: grid; gap: 12px; margin-top: 14px; }
+    textarea, input[type="range"] { width: 100%; font: inherit; }
+    textarea { border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; background: #fff; min-height: 110px; resize: vertical; }
+    .btn-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; border: none; border-radius: 14px; padding: 12px 16px; background: var(--primary); color: #fff; font-weight: 700; cursor: pointer; }
+    .btn.secondary { background: #eef4ff; color: #244e7a; border: 1px solid #d8e3f2; }
+    .btn:disabled { opacity: .6; cursor: not-allowed; }
+    .status { margin-top: 10px; font-size: .95rem; }
+    .status.error { color: var(--danger); }
+    .status.ok { color: var(--accent); }
+    pre { white-space: pre-wrap; word-break: break-word; background: #f8fafc; border: 1px solid var(--line); border-radius: 14px; padding: 14px; color: #334155; }
+    .slider-row { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center; }
+    .mini-note { font-size: .9rem; color: var(--muted); }
+    @media (max-width: 980px) {
+      .hero-grid, .grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
   <div class="shell">
-    <div class="card">
-      <h1>自适应辅导</h1>
-      <div class="muted">这里作为“辅导”模块的具体功能页，后续可以接入个性化讲解、练习推荐和多轮问答辅导。</div>
-      <a class="btn" href="student_hub.html">返回功能总览</a>
-    </div>
+    <header class="topbar">
+      <div>
+        <div id="pageTitle" style="font-size:1.5rem;font-weight:700;"></div>
+        <div id="pageSubtitle" class="muted"></div>
+      </div>
+      <a href="student_hub.html" id="backLink"></a>
+    </header>
+
+    <section class="hero">
+      <h1 id="heroTitle"></h1>
+      <p id="heroText"></p>
+      <div class="hero-grid">
+        <div class="meta-grid">
+          <div class="meta-box">
+            <strong id="labelTopic"></strong>
+            <div id="topicText"></div>
+          </div>
+          <div class="meta-box">
+            <strong id="labelPhase"></strong>
+            <div id="phaseText"></div>
+          </div>
+          <div class="meta-box">
+            <strong id="labelAgent"></strong>
+            <div>AG3_AdaptiveTutor</div>
+          </div>
+          <div class="meta-box">
+            <strong id="labelMode"></strong>
+            <div id="llmModeText"></div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:16px;">
+          <h2 id="riskPanelTitle" style="margin-top:0;"></h2>
+          <div class="slider-row">
+            <input id="riskInput" type="range" min="0" max="1" step="0.05" value="0.2" />
+            <span id="riskValue">0.20</span>
+          </div>
+          <div style="margin-top:10px;">
+            <span class="tag success" id="riskTag"></span>
+            <span class="tag success" id="abacTag"></span>
+          </div>
+          <div class="mini-note" style="margin-top:10px;" id="riskHint"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="stack">
+        <article class="card">
+          <h2 id="planTitle"></h2>
+          <div id="planTags"></div>
+          <div id="planList" class="list"></div>
+        </article>
+
+        <article class="card">
+          <h2 id="ag4Title"></h2>
+          <pre id="ag4Context"></pre>
+        </article>
+
+        <article class="card">
+          <h2 id="reflectionTitle"></h2>
+          <pre id="reflectionPad"></pre>
+        </article>
+      </div>
+
+      <div class="stack">
+        <article class="card">
+          <h2 id="chatTitle"></h2>
+          <div id="chatWindow" class="chat-window"></div>
+
+          <div class="controls">
+            <label>
+              <span id="messageLabel"></span>
+              <textarea id="messageInput"></textarea>
+            </label>
+
+            <div class="btn-row">
+              <button class="btn" id="sendBtn"></button>
+              <button class="btn secondary" id="initBtn"></button>
+              <button class="btn secondary" id="clearBtn"></button>
+            </div>
+
+            <div id="statusText" class="status"></div>
+          </div>
+        </article>
+      </div>
+    </section>
   </div>
+
+  <script>
+    const TEXT = {
+      pageTitle: "\u81ea\u9002\u5e94\u8f85\u5bfc\u5de5\u4f5c\u53f0",
+      pageSubtitle: "\u5df2\u63a5\u5165\u4e91\u7aef\u8f85\u5bfc\u63a5\u53e3\uff0c\u652f\u6301 AG3 \u89c4\u5212\u3001AG3 \u8f85\u5bfc\u3001AG4 \u641c\u96c6\u4e0e Reflexion \u53cd\u601d\u73af\u8def\u3002",
+      backLink: "\u8fd4\u56de\u529f\u80fd\u603b\u89c8",
+      heroTitle: "\u89c4\u5212\u9a71\u52a8\u7684\u591a\u8f6e\u8f85\u5bfc",
+      heroText: "\u9875\u9762\u4f1a\u81ea\u52a8\u5e26\u5165\u6700\u8fd1\u4e00\u6b21\u5b66\u4e60\u89c4\u5212\u4e0e\u5b66\u751f\u8131\u654f\u753b\u50cf\u3002\u9996\u6b21\u8fdb\u5165\u65f6\u4f1a\u5411\u4e91\u7aef\u53d1\u8d77\u4e00\u8f6e\u521d\u59cb\u5316\uff0c\u8ba9 AG3 \u5148\u5efa\u7acb\u5f53\u524d\u4f1a\u8bdd\u7684\u6559\u5b66\u89c4\u5212\uff0c\u518d\u8fdb\u5165\u540e\u7eed\u8f85\u5bfc\u3002",
+      labelTopic: "\u5f53\u524d\u4e3b\u9898",
+      labelPhase: "\u5f53\u524d\u6267\u884c\u9636\u6bb5",
+      labelAgent: "\u5f53\u524d\u667a\u80fd\u4f53",
+      labelMode: "\u6a21\u578b\u6a21\u5f0f",
+      riskPanelTitle: "\u98ce\u9669\u4e0e\u8bbf\u95ee\u72b6\u6001",
+      riskHint: "\u5f53 gnn_risk_score \u5927\u4e8e 0.8 \u65f6\uff0c\u9690\u79c1\u7f51\u5173\u4f1a\u76f4\u63a5\u7194\u65ad\u3002",
+      riskLow: "\u4f4e\u98ce\u9669",
+      riskMid: "\u4e2d\u98ce\u9669",
+      riskHigh: "\u9ad8\u98ce\u9669",
+      abacLow: "ABAC \u9884\u8ba1\u653e\u884c",
+      abacMid: "ABAC \u8c28\u614e\u653e\u884c",
+      abacHigh: "ABAC \u5c06\u7194\u65ad",
+      planTitle: "\u5b66\u4e60\u89c4\u5212",
+      ag4Title: "AG4 \u8865\u5145\u5185\u5bb9",
+      reflectionTitle: "\u53cd\u601d\u8349\u7a3f\u672c",
+      chatTitle: "\u8f85\u5bfc\u5bf9\u8bdd",
+      messageLabel: "\u5b66\u751f\u8f93\u5165",
+      messagePlaceholder: "\u4f8b\u5982\uff1a\u6211\u8fd8\u662f\u542c\u4e0d\u61c2\u77e9\u9635\u4e58\u6cd5\u4e3a\u4ec0\u4e48\u8981\u770b\u5217\u548c\u884c\u3002\u6216\u8005\uff1a\u8bf7\u7ed9\u6211\u4e00\u9053\u53d8\u5f0f\u9898\u3002",
+      sendBtn: "\u53d1\u9001\u5e76\u7ee7\u7eed\u8f85\u5bfc",
+      initBtn: "\u91cd\u65b0\u521d\u59cb\u5316\u672c\u8f6e\u8f85\u5bfc",
+      clearBtn: "\u6e05\u7a7a\u672c\u5730\u4f1a\u8bdd",
+      notRead: "\u672a\u8bfb\u53d6",
+      notInit: "\u672a\u521d\u59cb\u5316",
+      notCalled: "\u672a\u8c03\u7528",
+      noAg4: "\u5c1a\u672a\u89e6\u53d1 AG4 \u5185\u5bb9\u641c\u96c6\u3002",
+      noReflection: "\u5c1a\u672a\u5f62\u6210\u53cd\u601d\u8bb0\u5f55\u3002",
+      noPlanningTag: "\u672a\u68c0\u6d4b\u5230\u5b66\u4e60\u89c4\u5212",
+      noPlanningTitle: "\u6682\u65e0\u89c4\u5212",
+      noPlanningBody: "\u5efa\u8bae\u5148\u524d\u5f80\u5b66\u4e60\u89c4\u5212\u9875\u751f\u6210\u89c4\u5212\u7ed3\u679c\uff0c\u518d\u8fdb\u5165\u8f85\u5bfc\u5de5\u4f5c\u53f0\u3002",
+      planRead: "\u5df2\u8bfb\u53d6\u5b66\u4e60\u89c4\u5212",
+      step: "\u6b65\u9aa4",
+      objective: "\u76ee\u6807\uff1a",
+      advice: "\u5efa\u8bae\uff1a",
+      initBubble: "\u70b9\u51fb\u201c\u91cd\u65b0\u521d\u59cb\u5316\u672c\u8f6e\u8f85\u5bfc\u201d\uff0c\u8ba9 AG3 \u6839\u636e\u5b66\u4e60\u89c4\u5212\u751f\u6210\u7b2c\u4e00\u8f6e\u8f85\u5bfc\u8bdd\u672f\u3002",
+      statusInit: "\u6b63\u5728\u521d\u59cb\u5316\u8f85\u5bfc\u4f1a\u8bdd\u5e76\u751f\u6210\u5f53\u524d\u9636\u6bb5\u7684\u8f85\u5bfc\u8bdd\u672f...",
+      statusInitOk: "\u8f85\u5bfc\u4f1a\u8bdd\u5df2\u521d\u59cb\u5316\u3002",
+      statusNeedInput: "\u8bf7\u8f93\u5165\u5b66\u751f\u95ee\u9898\u6216\u53cd\u9988\u3002",
+      statusSending: "\u6b63\u5728\u53d1\u9001\u5230 AG3/AG4 \u8f85\u5bfc\u5f15\u64ce...",
+      statusAg4: "\u5df2\u89e6\u53d1 AG4 \u641c\u96c6\u3002",
+      statusUpdated: "\u8f85\u5bfc\u56de\u590d\u5df2\u66f4\u65b0\u3002",
+      statusCleared: "\u672c\u5730\u8f85\u5bfc\u4f1a\u8bdd\u5df2\u6e05\u7a7a\u3002",
+      restartHint: "\u5982\u679c\u4f60\u521a\u6539\u8fc7\u540e\u7aef\uff0c\u8bf7\u5148\u91cd\u542f 8010 \u7f51\u5173\u3002",
+      apiMissing: "\u672a\u627e\u5230\u53ef\u7528\u7684\u8f85\u5bfc\u63a5\u53e3\uff0c\u8bf7\u91cd\u542f 8010 \u7f51\u5173\u670d\u52a1\u3002"
+    };
+
+    const API_CANDIDATES = [
+      "http://127.0.0.1:8010/chat/tutoring",
+      "http://127.0.0.1:8010/api/chat/tutoring",
+      "http://127.0.0.1:8010/api/tutoring"
+    ];
+    const PLANNING_KEY = "eduMasPlanningResult";
+    const DIAGNOSIS_KEY = "eduMasDiagnosisResult";
+    const SESSION_KEY = "eduMasTutoringSession";
+
+    document.getElementById("pageTitle").textContent = TEXT.pageTitle;
+    document.getElementById("pageSubtitle").textContent = TEXT.pageSubtitle;
+    document.getElementById("backLink").textContent = TEXT.backLink;
+    document.getElementById("heroTitle").textContent = TEXT.heroTitle;
+    document.getElementById("heroText").textContent = TEXT.heroText;
+    document.getElementById("labelTopic").textContent = TEXT.labelTopic;
+    document.getElementById("labelPhase").textContent = TEXT.labelPhase;
+    document.getElementById("labelAgent").textContent = TEXT.labelAgent;
+    document.getElementById("labelMode").textContent = TEXT.labelMode;
+    document.getElementById("riskPanelTitle").textContent = TEXT.riskPanelTitle;
+    document.getElementById("riskHint").textContent = TEXT.riskHint;
+    document.getElementById("planTitle").textContent = TEXT.planTitle;
+    document.getElementById("ag4Title").textContent = TEXT.ag4Title;
+    document.getElementById("reflectionTitle").textContent = TEXT.reflectionTitle;
+    document.getElementById("chatTitle").textContent = TEXT.chatTitle;
+    document.getElementById("messageLabel").textContent = TEXT.messageLabel;
+    document.getElementById("messageInput").placeholder = TEXT.messagePlaceholder;
+    document.getElementById("sendBtn").textContent = TEXT.sendBtn;
+    document.getElementById("initBtn").textContent = TEXT.initBtn;
+    document.getElementById("clearBtn").textContent = TEXT.clearBtn;
+
+    const planningResult = JSON.parse(localStorage.getItem(PLANNING_KEY) || "null");
+    const diagnosisResult = JSON.parse(localStorage.getItem(DIAGNOSIS_KEY) || "null");
+    const profile = JSON.parse(sessionStorage.getItem("eduMasProfile") || "null");
+
+    const topicText = document.getElementById("topicText");
+    const phaseText = document.getElementById("phaseText");
+    const llmModeText = document.getElementById("llmModeText");
+    const riskInput = document.getElementById("riskInput");
+    const riskValue = document.getElementById("riskValue");
+    const riskTag = document.getElementById("riskTag");
+    const abacTag = document.getElementById("abacTag");
+    const planTags = document.getElementById("planTags");
+    const planList = document.getElementById("planList");
+    const ag4Context = document.getElementById("ag4Context");
+    const reflectionPad = document.getElementById("reflectionPad");
+    const chatWindow = document.getElementById("chatWindow");
+    const messageInput = document.getElementById("messageInput");
+    const sendBtn = document.getElementById("sendBtn");
+    const initBtn = document.getElementById("initBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const statusText = document.getElementById("statusText");
+
+    topicText.textContent = TEXT.notRead;
+    phaseText.textContent = TEXT.notInit;
+    llmModeText.textContent = TEXT.notCalled;
+    ag4Context.textContent = TEXT.noAg4;
+    reflectionPad.textContent = TEXT.noReflection;
+
+    const sessionId = (profile?.role || "student") + "_" + (profile?.displayName || "guest") + "_tutoring";
+    const fallbackTopic = planningResult?.planning_path?.[0]?.objective || "Matrix Multiplication";
+    const currentTopic = planningResult?.prompt_preview?.match(/\u5f53\u524d\u4e3b\u9898:\s*(.*)/)?.[1]?.trim() || fallbackTopic;
+
+    function buildSanitizedProfile() {
+      if (diagnosisResult && typeof diagnosisResult === "object") {
+        return diagnosisResult;
+      }
+      return {
+        cognitive_style: "Visual_High (LDP_noise_added: 0.05)",
+        weakness_tags: ["dimension_mismatch", "calculation_carelessness"],
+        stress_level: "Medium"
+      };
+    }
+
+    function updateRiskUi() {
+      const value = Number(riskInput.value);
+      riskValue.textContent = value.toFixed(2);
+      if (value > 0.8) {
+        riskTag.textContent = TEXT.riskHigh;
+        riskTag.className = "tag warn";
+        abacTag.textContent = TEXT.abacHigh;
+        abacTag.className = "tag warn";
+      } else if (value > 0.5) {
+        riskTag.textContent = TEXT.riskMid;
+        riskTag.className = "tag";
+        abacTag.textContent = TEXT.abacMid;
+        abacTag.className = "tag";
+      } else {
+        riskTag.textContent = TEXT.riskLow;
+        riskTag.className = "tag success";
+        abacTag.textContent = TEXT.abacLow;
+        abacTag.className = "tag success";
+      }
+    }
+
+    function renderPlanning() {
+      topicText.textContent = currentTopic;
+      if (!planningResult?.planning_path?.length) {
+        planTags.innerHTML = `<span class="tag warn">${TEXT.noPlanningTag}</span>`;
+        planList.innerHTML = `<div class="item"><strong>${TEXT.noPlanningTitle}</strong><div class="muted">${TEXT.noPlanningBody}</div></div>`;
+        return;
+      }
+
+      planTags.innerHTML = [
+        `<span class="tag success">${TEXT.planRead}</span>`,
+        `<span class="tag">${planningResult.current_agent || "AG3_AdaptiveTutor"}</span>`
+      ].join("");
+
+      planList.innerHTML = planningResult.planning_path.map((step, index) => `
+        <div class="item">
+          <strong>${TEXT.step} ${index + 1} ? ${step.stage}</strong>
+          <div><b>${TEXT.objective}</b>${step.objective}</div>
+          <div class="muted" style="margin-top:6px;"><b>${TEXT.advice}</b>${step.recommended_action}</div>
+        </div>
+      `).join("");
+    }
+
+    function renderChat(history) {
+      if (!history || !history.length) {
+        chatWindow.innerHTML = `<div class="bubble system">${TEXT.initBubble}</div>`;
+        return;
+      }
+      chatWindow.innerHTML = history.map((item) => {
+        const cls = item.role === "human" ? "user" : item.role === "system" ? "system" : "ai";
+        return `<div class="bubble ${cls}">${escapeHtml(item.content)}</div>`;
+      }).join("");
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    function escapeHtml(text) {
+      return String(text).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+    }
+
+    function setStatus(message, type) {
+      statusText.className = "status" + (type ? " " + type : "");
+      statusText.textContent = message;
+    }
+
+    function persistSession(data) {
+      localStorage.setItem(SESSION_KEY, JSON.stringify(data));
+    }
+
+    function restoreSession() {
+      const raw = localStorage.getItem(SESSION_KEY);
+      if (!raw) {
+        renderChat([]);
+        return null;
+      }
+      try {
+        const saved = JSON.parse(raw);
+        phaseText.textContent = saved.current_phase || "Tutoring";
+        llmModeText.textContent = saved.llm_mode || "mock";
+        ag4Context.textContent = saved.ag4_retrieved_context || TEXT.noAg4;
+        reflectionPad.textContent = saved.reflection_scratchpad || TEXT.noReflection;
+        renderChat(saved.chat_history_preview || []);
+        return saved;
+      } catch {
+        renderChat([]);
+        return null;
+      }
+    }
+
+    async function callTutoringApi(userMessage) {
+      const body = {
+        session_id: sessionId,
+        sanitized_profile: buildSanitizedProfile(),
+        current_topic: currentTopic,
+        user_message: userMessage || "",
+        gnn_risk_score: Number(riskInput.value)
+      };
+
+      let lastError = null;
+      for (const apiUrl of API_CANDIDATES) {
+        try {
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+          });
+          if (response.status === 404) {
+            lastError = new Error(`API not found: ${apiUrl}`);
+            continue;
+          }
+          const result = await response.json();
+          if (!response.ok) {
+            throw new Error(result.detail || "Tutoring API failed");
+          }
+          return result;
+        } catch (error) {
+          lastError = error;
+        }
+      }
+      throw lastError || new Error(TEXT.apiMissing);
+    }
+
+    async function initializeTutoring() {
+      sendBtn.disabled = true;
+      initBtn.disabled = true;
+      setStatus(TEXT.statusInit, "");
+      try {
+        const result = await callTutoringApi("");
+        phaseText.textContent = result.current_phase || "Tutoring";
+        llmModeText.textContent = result.llm_mode || "mock";
+        ag4Context.textContent = result.ag4_retrieved_context || TEXT.noAg4;
+        reflectionPad.textContent = result.reflection_scratchpad || TEXT.noReflection;
+        renderChat(result.chat_history_preview || []);
+        persistSession(result);
+        setStatus(TEXT.statusInitOk, "ok");
+      } catch (error) {
+        setStatus(`\u521d\u59cb\u5316\u5931\u8d25\uff1a${error.message}\u3002${TEXT.restartHint}`, "error");
+      } finally {
+        sendBtn.disabled = false;
+        initBtn.disabled = false;
+      }
+    }
+
+    async function sendMessage() {
+      const message = messageInput.value.trim();
+      if (!message) {
+        setStatus(TEXT.statusNeedInput, "error");
+        return;
+      }
+      sendBtn.disabled = true;
+      initBtn.disabled = true;
+      setStatus(TEXT.statusSending, "");
+      try {
+        const result = await callTutoringApi(message);
+        messageInput.value = "";
+        phaseText.textContent = result.current_phase || "Tutoring";
+        llmModeText.textContent = result.llm_mode || "mock";
+        ag4Context.textContent = result.ag4_retrieved_context || TEXT.noAg4;
+        reflectionPad.textContent = result.reflection_scratchpad || TEXT.noReflection;
+        renderChat(result.chat_history_preview || []);
+        persistSession(result);
+        setStatus(result.need_ag4_search ? TEXT.statusAg4 : TEXT.statusUpdated, "ok");
+      } catch (error) {
+        setStatus(`\u8c03\u7528\u5931\u8d25\uff1a${error.message}\u3002${TEXT.restartHint}`, "error");
+      } finally {
+        sendBtn.disabled = false;
+        initBtn.disabled = false;
+      }
+    }
+
+    function clearSession() {
+      localStorage.removeItem(SESSION_KEY);
+      ag4Context.textContent = TEXT.noAg4;
+      reflectionPad.textContent = TEXT.noReflection;
+      phaseText.textContent = TEXT.notInit;
+      llmModeText.textContent = TEXT.notCalled;
+      messageInput.value = "";
+      renderChat([]);
+      setStatus(TEXT.statusCleared, "ok");
+    }
+
+    riskInput.addEventListener("input", updateRiskUi);
+    sendBtn.addEventListener("click", sendMessage);
+    initBtn.addEventListener("click", initializeTutoring);
+    clearBtn.addEventListener("click", clearSession);
+    messageInput.addEventListener("keydown", (event) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+        sendMessage();
+      }
+    });
+
+    updateRiskUi();
+    renderPlanning();
+    if (!restoreSession()) {
+      renderChat([]);
+    }
+  </script>
 </body>
 </html>

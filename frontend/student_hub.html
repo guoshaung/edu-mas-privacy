@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
@@ -6,16 +6,20 @@
   <title>学生功能总览</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
-    :root { --bg:#f6f8fb; --panel:#fff; --line:#dbe3ee; --text:#243447; --muted:#6b7c93; --primary:#2f80ed; --soft:#eef4ff; --shadow:0 12px 32px rgba(36,52,71,.08); }
+    :root { --bg:#f6f8fb; --panel:#fff; --line:#dbe3ee; --text:#243447; --muted:#6b7c93; --primary:#2f80ed; --soft:#eef4ff; --shadow:0 12px 32px rgba(36,52,71,.08); --success:#166534; --success-soft:#f0fdf4; }
     * { box-sizing:border-box; }
     body { margin:0; background:var(--bg); color:var(--text); font-family:"Noto Sans SC",sans-serif; }
     .shell { width:min(1160px, calc(100% - 28px)); margin:0 auto; padding:24px 0 40px; }
-    .topbar,.card,.hero { background:var(--panel); border:1px solid var(--line); border-radius:20px; box-shadow:var(--shadow); }
+    .topbar,.card,.hero,.planning-bridge { background:var(--panel); border:1px solid var(--line); border-radius:20px; box-shadow:var(--shadow); }
     .topbar { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:18px 22px; margin-bottom:20px; }
     .muted { color:var(--muted); }
     .pill { display:inline-flex; align-items:center; padding:8px 12px; border-radius:999px; background:var(--soft); color:var(--primary); font-weight:700; }
     .hero { padding:28px; margin-bottom:20px; }
     .hero h1 { margin:0 0 12px; font-size:2.2rem; }
+    .planning-bridge { padding:22px; margin-bottom:20px; background:linear-gradient(180deg, #ffffff 0%, #f7fcf8 100%); }
+    .bridge-grid { display:grid; grid-template-columns: 1.1fr .9fr; gap:18px; }
+    .bridge-box { border:1px solid var(--line); border-radius:16px; padding:16px; background:#fcfffd; }
+    .bridge-box strong { display:block; margin-bottom:10px; }
     .grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:18px; }
     .card { padding:22px; }
     .icon { width:52px; height:52px; border-radius:14px; display:grid; place-items:center; background:var(--soft); color:var(--primary); font-weight:700; margin-bottom:14px; }
@@ -23,7 +27,8 @@
     .card p { margin:0 0 14px; color:var(--muted); line-height:1.8; }
     .tag { display:inline-flex; padding:6px 10px; border-radius:999px; background:var(--soft); color:var(--primary); font-size:.88rem; font-weight:700; margin-right:6px; margin-bottom:6px; }
     .btn { display:inline-block; margin-top:16px; padding:10px 14px; border-radius:12px; background:var(--primary); color:#fff; text-decoration:none; font-weight:700; }
-    @media (max-width:900px) { .grid{grid-template-columns:1fr;} .topbar{flex-direction:column;align-items:stretch;} }
+    .success-tag { display:inline-flex; padding:6px 10px; border-radius:999px; background:var(--success-soft); color:var(--success); font-size:.88rem; font-weight:700; margin-right:6px; margin-bottom:6px; }
+    @media (max-width:900px) { .grid,.bridge-grid{grid-template-columns:1fr;} .topbar{flex-direction:column;align-items:stretch;} }
   </style>
 </head>
 <body>
@@ -38,7 +43,29 @@
 
     <section class="hero">
       <h1>诊断、规划、辅导、检验</h1>
-      <div class="muted">统一登录后，先进入这里做模块选择。后续每个模块都可以继续接入你的多智能体系统。</div>
+      <div class="muted">统一登录后，先进入这里做模块选择。学习规划生成后，会自动影响后续的辅导和知识检验模块。</div>
+    </section>
+
+    <section class="planning-bridge">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+        <div>
+          <div style="font-size:1.2rem;font-weight:700;">规划驱动的后续联动</div>
+          <div class="muted">最近一次学习规划会被自适应辅导与知识检验模块自动读取。</div>
+        </div>
+        <a class="btn" style="margin-top:0;" href="student_planning.html">更新学习规划</a>
+      </div>
+      <div class="bridge-grid" style="margin-top:18px;">
+        <div class="bridge-box">
+          <strong>最近一次规划摘要</strong>
+          <div id="planningSummary" class="muted">尚未生成学习规划。</div>
+        </div>
+        <div class="bridge-box">
+          <strong>规划已影响的模块</strong>
+          <div id="planningImpact">
+            <span class="tag">待生成规划</span>
+          </div>
+        </div>
+      </div>
     </section>
 
     <section class="grid">
@@ -61,16 +88,16 @@
       <article class="card">
         <div class="icon">辅</div>
         <h2>自适应辅导</h2>
-        <p>基于学习风格和目标学科给出更合适的辅导建议、讲解方式和交互策略。</p>
-        <div><span class="tag">辅导策略</span><span class="tag">内容推荐</span></div>
+        <p>自动继承学习规划输出，围绕当前阶段重点给出更合适的讲解方式和辅导策略。</p>
+        <div><span class="success-tag">读取规划结果</span><span class="tag">辅导策略</span></div>
         <a class="btn" href="student_tutoring.html">进入模块</a>
       </article>
 
       <article class="card">
         <div class="icon">检</div>
         <h2>知识检验</h2>
-        <p>围绕当前重点学科生成阶段小测、错题回顾和知识点掌握度检查。</p>
-        <div><span class="tag">阶段小测</span><span class="tag">掌握分析</span></div>
+        <p>根据学习规划的阶段目标生成更贴近当前路径的检测重点、练习顺序和反馈建议。</p>
+        <div><span class="success-tag">读取规划结果</span><span class="tag">掌握分析</span></div>
         <a class="btn" href="student_assessment.html">进入模块</a>
       </article>
     </section>
@@ -81,6 +108,18 @@
       const profile = JSON.parse(sessionStorage.getItem("eduMasProfile") || "null");
       if (profile && profile.displayName) {
         document.getElementById("welcomeText").textContent = profile.displayName + "，先从四个模块中选择一个，再进入对应的具体功能页面。";
+      }
+    } catch (e) {}
+
+    try {
+      const planningResult = JSON.parse(localStorage.getItem("eduMasPlanningResult") || "null");
+      if (planningResult && Array.isArray(planningResult.planning_path) && planningResult.planning_path.length) {
+        document.getElementById("planningSummary").textContent = planningResult.diagnosis_result || "已生成学习规划。";
+        document.getElementById("planningImpact").innerHTML = [
+          '<span class="success-tag">自适应辅导已联动</span>',
+          '<span class="success-tag">知识检验已联动</span>',
+          `<span class="tag">首阶段：${planningResult.planning_path[0].stage}</span>`
+        ].join('');
       }
     } catch (e) {}
   </script>

@@ -1,4 +1,4 @@
-const { useState } = React;
+﻿const { useState } = React;
 
 const roleOptions = [
   {
@@ -6,7 +6,9 @@ const roleOptions = [
     title: "学生入口",
     subtitle: "进入个性化学习、隐私保护问答与学习支持界面。",
     target: "./student_hub.html",
-    metrics: ["提问与对话", "学习规划", "知识检测", "隐私网关"],
+    metrics: ["问答与对话", "学习规划", "知识检验", "隐私网关"],
+    username: "张三",
+    password: "123",
   },
   {
     id: "teacher",
@@ -14,19 +16,44 @@ const roleOptions = [
     subtitle: "进入教学分析、资源调度与课堂管理界面。",
     target: "./teacher_cn.html",
     metrics: ["班级画像", "资源编排", "学习监测", "策略反馈"],
+    username: "李四",
+    password: "123",
   },
 ];
 
 function App() {
   const [selectedRole, setSelectedRole] = useState("student");
   const [displayName, setDisplayName] = useState("");
+  const [password, setPassword] = useState("");
+  const [errorText, setErrorText] = useState("");
 
   const activeRole = roleOptions.find((role) => role.id === selectedRole);
 
+  const handleRoleChange = (roleId) => {
+    setSelectedRole(roleId);
+    setDisplayName("");
+    setPassword("");
+    setErrorText("");
+  };
+
   const handleEnter = () => {
+    const username = displayName.trim();
+
+    if (!username || !password) {
+      setErrorText("请输入用户名和密码。");
+      return;
+    }
+
+    if (username !== activeRole.username || password !== activeRole.password) {
+      setErrorText(
+        `账号或密码错误。${activeRole.title}账号为“${activeRole.username}”，密码为“${activeRole.password}”。`
+      );
+      return;
+    }
+
     const profile = {
       role: activeRole.id,
-      displayName: displayName.trim(),
+      displayName: username,
       updatedAt: new Date().toISOString(),
     };
 
@@ -43,9 +70,7 @@ function App() {
         <section className="portal-copy">
           <span className="eyebrow">Multi-Agent Privacy Learning</span>
           <h1>统一登录门户</h1>
-          <p>
-            保留现有教师端与学生端页面，在统一入口完成身份选择后再进入对应工作台。
-          </p>
+          <p>保留教师端与学生端分流页面，在统一入口完成身份校验后再进入对应工作台。</p>
           <div className="pill-row">
             <span>React 入口</span>
             <span>角色分流</span>
@@ -73,7 +98,7 @@ function App() {
                 key={role.id}
                 type="button"
                 className={`role-card ${selectedRole === role.id ? "active" : ""}`}
-                onClick={() => setSelectedRole(role.id)}
+                onClick={() => handleRoleChange(role.id)}
               >
                 <strong>{role.title}</strong>
                 <span>{role.subtitle}</span>
@@ -86,17 +111,27 @@ function App() {
             <input
               value={displayName}
               onChange={(event) => setDisplayName(event.target.value)}
-              placeholder="请输入姓名或账号"
+              placeholder={activeRole.username}
             />
           </label>
+
+          <label className="input-group">
+            <span>密码</span>
+            <input
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="请输入密码"
+            />
+          </label>
+
+          {errorText ? <p className="tip-text" style={{ color: "#b42318" }}>{errorText}</p> : null}
 
           <button type="button" className="primary-button" onClick={handleEnter}>
             进入 {activeRole.title}
           </button>
 
-          <p className="tip-text">
-            登录信息会暂存到当前浏览器会话，后续可以继续接教师端与学生端的真实鉴权接口。
-          </p>
+          <p className="tip-text">测试账号：学生为“张三 / 123”，教师为“李四 / 123”。</p>
         </section>
       </main>
     </div>

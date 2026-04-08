@@ -1,24 +1,287 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>学习规划</title>
   <style>
-    body { margin:0; background:#f6f8fb; color:#243447; font-family:"Noto Sans SC",sans-serif; }
-    .shell { width:min(980px, calc(100% - 28px)); margin:0 auto; padding:24px 0 40px; }
-    .card { background:#fff; border:1px solid #dbe3ee; border-radius:20px; padding:24px; box-shadow:0 12px 32px rgba(36,52,71,.08); }
-    .muted { color:#6b7c93; line-height:1.8; }
-    .btn { display:inline-block; margin-top:12px; padding:10px 14px; border-radius:12px; background:#2f80ed; color:#fff; text-decoration:none; font-weight:700; }
+    :root {
+      --bg: #f6f8fb;
+      --card: #ffffff;
+      --text: #203040;
+      --muted: #6b7c93;
+      --line: #dbe3ee;
+      --primary: #166534;
+      --primary-soft: #eff8f2;
+      --danger: #b42318;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; }
+    .shell { width:min(1100px, calc(100% - 28px)); margin:0 auto; padding:28px 0 44px; }
+    .topbar { display:flex; justify-content:space-between; align-items:center; gap:16px; margin-bottom:20px; }
+    .topbar a { color:#244e7a; text-decoration:none; font-weight:600; }
+    .grid { display:grid; grid-template-columns: 1fr 1.1fr; gap:18px; }
+    .card { background:var(--card); border:1px solid var(--line); border-radius:20px; padding:24px; box-shadow:0 12px 32px rgba(36,52,71,.08); }
+    .muted { color:var(--muted); line-height:1.8; }
+    .badge { display:inline-block; padding:6px 10px; border-radius:999px; background:var(--primary-soft); color:var(--primary); font-size:13px; font-weight:700; }
+    h1, h2, h3 { margin-top:0; }
+    label { display:grid; gap:8px; margin-bottom:16px; font-weight:600; }
+    input, textarea { width:100%; border:1px solid var(--line); border-radius:14px; padding:12px 14px; font:inherit; background:#fff; }
+    textarea { min-height:90px; resize:vertical; }
+    .chips { display:flex; flex-wrap:wrap; gap:10px; margin:10px 0 16px; }
+    .chip { padding:8px 12px; border-radius:999px; border:1px solid #c7d8ea; background:#f7fbff; color:#244e7a; font-size:14px; }
+    .btn { display:inline-flex; align-items:center; justify-content:center; border:none; border-radius:14px; padding:12px 16px; background:var(--primary); color:#fff; text-decoration:none; font-weight:700; cursor:pointer; }
+    .btn.secondary { background:#eef4ff; color:#244e7a; border:1px solid #d8e3f2; }
+    .btn-row { display:flex; gap:12px; flex-wrap:wrap; }
+    .status { margin-top:12px; font-size:14px; }
+    .status.error { color:var(--danger); }
+    .status.ok { color:var(--primary); }
+    .plan-list { display:grid; gap:12px; margin-top:16px; }
+    .plan-item { border:1px solid var(--line); border-radius:16px; padding:16px; background:#fbfdff; }
+    .plan-item strong { display:block; margin-bottom:8px; }
+    .meta-grid { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:12px; margin-top:14px; }
+    .meta-box { border:1px solid var(--line); border-radius:14px; padding:14px; background:#fcfcfd; }
+    pre { white-space:pre-wrap; word-break:break-word; background:#f8fafc; border:1px solid var(--line); border-radius:14px; padding:14px; color:#334155; }
+
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
   <div class="shell">
-    <div class="card">
-      <h1>学习规划</h1>
-      <div class="muted">这里作为“规划”模块的具体功能页，后续可以继续接入按学科优先级生成周计划、日任务和阶段目标。</div>
-      <a class="btn" href="student_hub.html">返回功能总览</a>
+    <div class="topbar">
+      <div>
+        <span class="badge">Learning Planning</span>
+        <h1>学习规划阶段</h1>
+      </div>
+      <a href="student_hub.html">返回功能总览</a>
+    </div>
+
+    <div class="grid">
+      <section class="card">
+        <h2>本地 A1 切片与脱敏请求</h2>
+        <p class="muted">
+          本页模拟学生端 A1 智能体在本地对画像做规划阶段切片，只上传脱敏后的
+          <code>sanitized_features</code> 给云端规划智能体。
+        </p>
+
+        <div class="chips">
+          <span class="chip">session_id: req_8848</span>
+          <span class="chip">request_type: learning_planning</span>
+          <span class="chip">SRPG + LDP mock</span>
+        </div>
+
+        <label>
+          当前主题
+          <input id="topicInput" value="Matrix Multiplication" />
+        </label>
+
+        <label>
+          脱敏后的认知风格
+          <input id="cognitiveStyleInput" value="Visual_High (LDP_noise_added: 0.05)" />
+        </label>
+
+        <label>
+          脆弱点标签
+          <input id="weaknessTagsInput" value="dimension_mismatch, calculation_carelessness" />
+        </label>
+
+        <label>
+          压力水平
+          <input id="stressLevelInput" value="Medium" />
+        </label>
+
+        <label>
+          请求 JSON 预览
+          <textarea id="requestPreview" readonly></textarea>
+        </label>
+
+        <div class="btn-row">
+          <button class="btn" id="generatePlanBtn">生成学习规划</button>
+          <button class="btn secondary" id="saveDraftBtn">保存本地草稿</button>
+        </div>
+
+        <div id="requestStatus" class="status"></div>
+      </section>
+
+      <section class="card">
+        <h2>LangGraph 规划结果</h2>
+        <p class="muted">
+          服务端会先进行 ABAC mock 鉴权与风险评分，再把脱敏特征注入 LangGraph 的
+          <code>AgentState</code>，由无状态的 <code>AG3_AdaptiveTutor</code> 在规划阶段生成学习路径。
+        </p>
+
+        <div class="meta-grid">
+          <div class="meta-box">
+            <strong>当前智能体</strong>
+            <div id="currentAgent">未生成</div>
+          </div>
+          <div class="meta-box">
+            <strong>风险分数</strong>
+            <div id="riskScore">未生成</div>
+          </div>
+        </div>
+
+        <h3 style="margin-top:18px;">诊断摘要</h3>
+        <pre id="diagnosisOutput">尚未生成规划。</pre>
+
+        <h3>规划路径</h3>
+        <div id="planList" class="plan-list">
+          <div class="plan-item">
+            <strong>等待规划生成</strong>
+            <div class="muted">点击左侧“生成学习规划”后，这里会展示 LangGraph 输出的学习路径。</div>
+          </div>
+        </div>
+
+        <h3>Prompt 预览</h3>
+        <pre id="promptPreview">尚未生成。</pre>
+      </section>
     </div>
   </div>
+
+  <script>
+    const STORAGE_KEY = "eduMasPlanningDraft";
+    const RESULT_KEY = "eduMasPlanningResult";
+    const GATEWAY_URL = "http://127.0.0.1:8010/api/planning/learning-plan";
+
+    const topicInput = document.getElementById("topicInput");
+    const cognitiveStyleInput = document.getElementById("cognitiveStyleInput");
+    const weaknessTagsInput = document.getElementById("weaknessTagsInput");
+    const stressLevelInput = document.getElementById("stressLevelInput");
+    const requestPreview = document.getElementById("requestPreview");
+    const requestStatus = document.getElementById("requestStatus");
+    const diagnosisOutput = document.getElementById("diagnosisOutput");
+    const promptPreview = document.getElementById("promptPreview");
+    const currentAgent = document.getElementById("currentAgent");
+    const riskScore = document.getElementById("riskScore");
+    const planList = document.getElementById("planList");
+
+    function buildPayload() {
+      const weaknessTags = weaknessTagsInput.value
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean);
+
+      return {
+        session_id: "req_8848",
+        request_type: "learning_planning",
+        payload: {
+          current_topic: topicInput.value.trim() || "Matrix Multiplication",
+          sanitized_features: {
+            cognitive_style: cognitiveStyleInput.value.trim() || "Visual_High (LDP_noise_added: 0.05)",
+            weakness_tags: weaknessTags,
+            stress_level: stressLevelInput.value.trim() || "Medium"
+          }
+        },
+        metadata: {
+          timestamp: 1712383838,
+          client_version: "1.0"
+        }
+      };
+    }
+
+    function syncPreview() {
+      requestPreview.value = JSON.stringify(buildPayload(), null, 2);
+    }
+
+    function renderPlan(result) {
+      diagnosisOutput.textContent = result.diagnosis_result || "暂无诊断结果。";
+      promptPreview.textContent = result.prompt_preview || "暂无 Prompt。";
+      currentAgent.textContent = result.current_agent || "AG3_AdaptiveTutor";
+      riskScore.textContent = String(result.risk_score ?? "N/A");
+
+      if (!Array.isArray(result.planning_path) || result.planning_path.length === 0) {
+        planList.innerHTML = '<div class="plan-item"><strong>暂无规划路径</strong></div>';
+        return;
+      }
+
+      planList.innerHTML = result.planning_path.map((step) => `
+        <article class="plan-item">
+          <strong>${step.stage}</strong>
+          <div><b>目标：</b>${step.objective}</div>
+          <div style="margin-top:6px;"><b>建议：</b>${step.recommended_action}</div>
+          <div style="margin-top:6px;" class="muted">预计用时：${step.estimated_minutes} 分钟</div>
+        </article>
+      `).join("");
+    }
+
+    function saveDraft() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(buildPayload()));
+      requestStatus.className = "status ok";
+      requestStatus.textContent = "规划草稿已保存在本地浏览器。";
+    }
+
+    function restoreDraft() {
+      const draftRaw = localStorage.getItem(STORAGE_KEY);
+      if (!draftRaw) {
+        syncPreview();
+        return;
+      }
+
+      try {
+        const draft = JSON.parse(draftRaw);
+        topicInput.value = draft.payload?.current_topic || topicInput.value;
+        cognitiveStyleInput.value = draft.payload?.sanitized_features?.cognitive_style || cognitiveStyleInput.value;
+        weaknessTagsInput.value = (draft.payload?.sanitized_features?.weakness_tags || []).join(", ");
+        stressLevelInput.value = draft.payload?.sanitized_features?.stress_level || stressLevelInput.value;
+      } catch (error) {
+        console.warn("Failed to restore planning draft", error);
+      }
+
+      syncPreview();
+    }
+
+    function restoreResult() {
+      const resultRaw = localStorage.getItem(RESULT_KEY);
+      if (!resultRaw) {
+        return;
+      }
+
+      try {
+        renderPlan(JSON.parse(resultRaw));
+      } catch (error) {
+        console.warn("Failed to restore planning result", error);
+      }
+    }
+
+    async function generatePlan() {
+      const payload = buildPayload();
+      requestStatus.className = "status";
+      requestStatus.textContent = "正在调用 FastAPI 隐私网关与 LangGraph 规划工作流...";
+
+      try {
+        const response = await fetch(GATEWAY_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+        if (!response.ok) {
+          throw new Error(result.detail || "学习规划生成失败。");
+        }
+
+        localStorage.setItem(RESULT_KEY, JSON.stringify(result));
+        requestStatus.className = "status ok";
+        requestStatus.textContent = "学习规划已生成，并保存在本地浏览器。";
+        renderPlan(result);
+      } catch (error) {
+        requestStatus.className = "status error";
+        requestStatus.textContent = `调用失败：${error.message}。请先启动 8010 端口的规划网关服务。`;
+      }
+    }
+
+    [topicInput, cognitiveStyleInput, weaknessTagsInput, stressLevelInput].forEach((element) => {
+      element.addEventListener("input", syncPreview);
+    });
+
+    document.getElementById("saveDraftBtn").addEventListener("click", saveDraft);
+    document.getElementById("generatePlanBtn").addEventListener("click", generatePlan);
+
+    restoreDraft();
+    restoreResult();
+  </script>
 </body>
 </html>

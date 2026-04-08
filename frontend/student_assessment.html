@@ -1,24 +1,100 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>知识检验</title>
   <style>
-    body { margin:0; background:#f6f8fb; color:#243447; font-family:"Noto Sans SC",sans-serif; }
-    .shell { width:min(980px, calc(100% - 28px)); margin:0 auto; padding:24px 0 40px; }
-    .card { background:#fff; border:1px solid #dbe3ee; border-radius:20px; padding:24px; box-shadow:0 12px 32px rgba(36,52,71,.08); }
-    .muted { color:#6b7c93; line-height:1.8; }
-    .btn { display:inline-block; margin-top:12px; padding:10px 14px; border-radius:12px; background:#2f80ed; color:#fff; text-decoration:none; font-weight:700; }
+    :root {
+      --bg: #f6f8fb;
+      --card: #ffffff;
+      --text: #243447;
+      --muted: #6b7c93;
+      --line: #dbe3ee;
+      --primary: #7c3aed;
+      --soft: #f4efff;
+    }
+    * { box-sizing: border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; }
+    .shell { width:min(1080px, calc(100% - 28px)); margin:0 auto; padding:24px 0 40px; }
+    .topbar,.card { background:#fff; border:1px solid var(--line); border-radius:20px; box-shadow:0 12px 32px rgba(36,52,71,.08); }
+    .topbar { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:18px 22px; margin-bottom:20px; }
+    .topbar a { color:#244e7a; text-decoration:none; font-weight:600; }
+    .grid { display:grid; grid-template-columns: 1fr 1fr; gap:18px; }
+    .card { padding:22px; }
+    .muted { color:var(--muted); line-height:1.8; }
+    .tag { display:inline-flex; padding:6px 10px; border-radius:999px; background:var(--soft); color:var(--primary); font-size:.88rem; font-weight:700; margin-right:8px; margin-bottom:8px; }
+    .list { display:grid; gap:12px; margin-top:14px; }
+    .item { border:1px solid var(--line); border-radius:16px; padding:14px; background:#fbfdff; }
+    .item strong { display:block; margin-bottom:8px; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
   </style>
 </head>
 <body>
   <div class="shell">
-    <div class="card">
-      <h1>知识检验</h1>
-      <div class="muted">这里作为“检验”模块的具体功能页，后续可以接入阶段小测、掌握度分析和错题回顾。</div>
-      <a class="btn" href="student_hub.html">返回功能总览</a>
-    </div>
+    <header class="topbar">
+      <div>
+        <div style="font-size:1.5rem;font-weight:700;">知识检验</div>
+        <div class="muted">本页会根据学习规划结果确定检验重点，形成更贴近当前路径的阶段性检测。</div>
+      </div>
+      <a href="student_hub.html">返回功能总览</a>
+    </header>
+
+    <section class="grid">
+      <article class="card">
+        <h2>规划映射的检验重点</h2>
+        <div id="assessmentTags"></div>
+        <div id="assessmentFocus" class="list"></div>
+      </article>
+
+      <article class="card">
+        <h2>建议的阶段性检测</h2>
+        <div id="assessmentPlan" class="list"></div>
+      </article>
+    </section>
   </div>
+
+  <script>
+    const planningResult = JSON.parse(localStorage.getItem("eduMasPlanningResult") || "null");
+    const planningPath = planningResult?.planning_path || [];
+
+    const assessmentTags = document.getElementById("assessmentTags");
+    const assessmentFocus = document.getElementById("assessmentFocus");
+    const assessmentPlan = document.getElementById("assessmentPlan");
+
+    if (!planningResult || !planningPath.length) {
+      assessmentTags.innerHTML = '<span class="tag">未生成规划</span>';
+      assessmentFocus.innerHTML = '<div class="item"><strong>暂无检验重点</strong><div class="muted">请先在学习规划页生成规划。</div></div>';
+      assessmentPlan.innerHTML = '<div class="item"><strong>暂无阶段检测建议</strong><div class="muted">规划生成后，这里会自动依据规划路径调整检测内容。</div></div>';
+    } else {
+      assessmentTags.innerHTML = [
+        "概念理解",
+        "维度判断",
+        "计算规范",
+        "迁移应用"
+      ].map((tag) => `<span class="tag">${tag}</span>`).join("");
+
+      assessmentFocus.innerHTML = planningPath.map((step) => `
+        <div class="item">
+          <strong>${step.stage}</strong>
+          <div><b>对应目标：</b>${step.objective}</div>
+          <div class="muted" style="margin-top:6px;">检验会重点围绕这一阶段设计题目和反馈。</div>
+        </div>
+      `).join("");
+
+      const assessments = [
+        "先做 3 道维度匹配判断题，快速检测基础规则是否稳定。",
+        "再做 2 道带步骤矩阵乘法题，检查计算过程是否规范。",
+        "最后做 1 道综合应用题，验证是否具备迁移能力。"
+      ];
+
+      assessmentPlan.innerHTML = assessments.map((item, index) => `
+        <div class="item">
+          <strong>检测环节 ${index + 1}</strong>
+          <div>${item}</div>
+        </div>
+      `).join("");
+    }
+  </script>
 </body>
 </html>

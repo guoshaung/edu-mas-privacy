@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>学生页面</title>
+  <style>
+    :root { --bg:#f6f8fb; --panel:#fff; --line:#dbe3ee; --text:#243447; --muted:#6b7c93; --primary:#2f80ed; --soft:#eef4ff; --shadow:0 12px 32px rgba(36,52,71,.08); --success:#166534; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; }
+    .shell { width:min(1180px, calc(100% - 28px)); margin:0 auto; padding:24px 0 40px; }
+    .menu-bar,.card,.hero { background:var(--panel); border:1px solid var(--line); border-radius:20px; box-shadow:var(--shadow); }
+    .menu-bar { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:14px 18px; margin-bottom:20px; }
+    .menu-links { display:flex; gap:10px; flex-wrap:wrap; }
+    .menu-link { display:inline-flex; align-items:center; padding:10px 14px; border-radius:999px; text-decoration:none; font-weight:700; color:var(--primary); background:var(--soft); }
+    .menu-link.active { background:#243447; color:#fff; }
+    .hero { padding:24px; margin-bottom:20px; }
+    .hero h1 { margin:0 0 10px; }
+    .muted { color:var(--muted); line-height:1.8; }
+    .grid { display:grid; grid-template-columns: 360px 1fr; gap:18px; }
+    .card { padding:22px; }
+    .avatar-wrap { display:grid; place-items:center; gap:12px; }
+    .avatar { width:136px; height:136px; border-radius:50%; object-fit:cover; border:4px solid #eef4ff; background:#eef4ff; }
+    .field { display:grid; gap:8px; margin-top:14px; }
+    .field label { font-weight:700; color:#425466; }
+    .field input, .field textarea { width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:12px; font:inherit; background:#fff; }
+    .field textarea { min-height:88px; resize:vertical; }
+    .btn-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; }
+    .btn { display:inline-flex; align-items:center; justify-content:center; border:none; border-radius:12px; padding:10px 14px; background:var(--primary); color:#fff; font-weight:700; cursor:pointer; }
+    .btn.secondary { background:#eef4ff; color:#244e7a; border:1px solid #d8e3f2; }
+    .pill { display:inline-flex; padding:6px 10px; border-radius:999px; background:#f0fdf4; color:var(--success); font-weight:700; font-size:.88rem; margin-right:8px; margin-bottom:8px; }
+    .knowledge-map { width:100%; border:1px solid var(--line); border-radius:18px; background:linear-gradient(180deg,#fcfdff 0%,#f7fbff 100%); padding:18px; }
+    .knowledge-map svg { width:100%; height:auto; }
+    .stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-top:14px; }
+    .stat { border:1px solid var(--line); border-radius:14px; padding:14px; background:#fcfcfd; }
+    .stat strong { display:block; margin-bottom:8px; }
+    @media (max-width: 980px) { .grid,.stats{grid-template-columns:1fr;} }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <nav class="menu-bar">
+      <div class="menu-links">
+        <a class="menu-link" href="student_hub.html">功能页面</a>
+        <a class="menu-link active" href="student_profile.html">学生页面</a>
+        <a class="menu-link" href="privacy_lab.html">隐私测试页</a>
+      </div>
+      <div class="muted">学生个人信息与知识图谱展示</div>
+    </nav>
+
+    <section class="hero">
+      <h1>学生页面</h1>
+      <div class="muted">这里用于演示学生的个人信息、本地头像修改和知识图谱展示。所有修改仅保存在当前浏览器本地。</div>
+    </section>
+
+    <section class="grid">
+      <article class="card">
+        <div class="avatar-wrap">
+          <img id="avatarPreview" class="avatar" alt="student avatar" src="https://api.dicebear.com/9.x/thumbs/svg?seed=zhangsan" />
+          <input id="avatarInput" type="file" accept="image/*" />
+        </div>
+
+        <div class="field">
+          <label for="studentName">姓名</label>
+          <input id="studentName" type="text" value="张三" />
+        </div>
+        <div class="field">
+          <label for="studentId">学号</label>
+          <input id="studentId" type="text" value="20260001" />
+        </div>
+        <div class="field">
+          <label for="studentGrade">年级</label>
+          <input id="studentGrade" type="text" value="高一" />
+        </div>
+        <div class="field">
+          <label for="studentBio">学习简介</label>
+          <textarea id="studentBio">偏好图示化讲解，数学与信息技术学习积极，容易在计算细节处出现粗心错误。</textarea>
+        </div>
+
+        <div class="btn-row">
+          <button class="btn" id="saveProfileBtn" type="button">保存信息</button>
+          <button class="btn secondary" id="resetAvatarBtn" type="button">恢复默认头像</button>
+        </div>
+      </article>
+
+      <article class="card">
+        <h2 style="margin-top:0;">学生知识图谱</h2>
+        <div>
+          <span class="pill">矩阵乘法</span>
+          <span class="pill">维度判断</span>
+          <span class="pill">过程检验</span>
+          <span class="pill">迁移应用</span>
+        </div>
+        <div class="knowledge-map" style="margin-top:14px;">
+          <svg viewBox="0 0 760 420" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <linearGradient id="nodeFill" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#eff6ff" />
+                <stop offset="100%" stop-color="#dbeafe" />
+              </linearGradient>
+            </defs>
+            <line x1="160" y1="90" x2="360" y2="90" stroke="#94a3b8" stroke-width="3" />
+            <line x1="360" y1="90" x2="560" y2="90" stroke="#94a3b8" stroke-width="3" />
+            <line x1="360" y1="90" x2="250" y2="260" stroke="#94a3b8" stroke-width="3" />
+            <line x1="360" y1="90" x2="470" y2="260" stroke="#94a3b8" stroke-width="3" />
+            <g>
+              <circle cx="160" cy="90" r="54" fill="url(#nodeFill)" stroke="#2563eb" stroke-width="4" />
+              <text x="160" y="84" text-anchor="middle" font-size="24" fill="#1e3a8a">先修基础</text>
+              <text x="160" y="112" text-anchor="middle" font-size="18" fill="#475569">矩阵表示</text>
+            </g>
+            <g>
+              <circle cx="360" cy="90" r="60" fill="url(#nodeFill)" stroke="#2563eb" stroke-width="4" />
+              <text x="360" y="84" text-anchor="middle" font-size="24" fill="#1e3a8a">核心知识</text>
+              <text x="360" y="112" text-anchor="middle" font-size="18" fill="#475569">矩阵乘法</text>
+            </g>
+            <g>
+              <circle cx="560" cy="90" r="54" fill="url(#nodeFill)" stroke="#2563eb" stroke-width="4" />
+              <text x="560" y="84" text-anchor="middle" font-size="24" fill="#1e3a8a">拓展应用</text>
+              <text x="560" y="112" text-anchor="middle" font-size="18" fill="#475569">综合问题</text>
+            </g>
+            <g>
+              <circle cx="250" cy="260" r="50" fill="#fef3c7" stroke="#f59e0b" stroke-width="4" />
+              <text x="250" y="254" text-anchor="middle" font-size="22" fill="#92400e">薄弱点</text>
+              <text x="250" y="282" text-anchor="middle" font-size="17" fill="#78350f">维度判断</text>
+            </g>
+            <g>
+              <circle cx="470" cy="260" r="50" fill="#dcfce7" stroke="#22c55e" stroke-width="4" />
+              <text x="470" y="254" text-anchor="middle" font-size="22" fill="#166534">优势点</text>
+              <text x="470" y="282" text-anchor="middle" font-size="17" fill="#166534">图示理解</text>
+            </g>
+          </svg>
+        </div>
+
+        <div class="stats">
+          <div class="stat">
+            <strong>当前主攻模块</strong>
+            <span>矩阵乘法</span>
+          </div>
+          <div class="stat">
+            <strong>最近掌握度</strong>
+            <span id="masteryStat">pending</span>
+          </div>
+          <div class="stat">
+            <strong>推荐节奏</strong>
+            <span>15-20 分钟/段</span>
+          </div>
+        </div>
+      </article>
+    </section>
+  </div>
+
+  <script>
+    const STORAGE_KEY = "eduMasStudentProfilePage";
+    const avatarPreview = document.getElementById("avatarPreview");
+    const avatarInput = document.getElementById("avatarInput");
+    const saveProfileBtn = document.getElementById("saveProfileBtn");
+    const resetAvatarBtn = document.getElementById("resetAvatarBtn");
+    const fields = {
+      studentName: document.getElementById("studentName"),
+      studentId: document.getElementById("studentId"),
+      studentGrade: document.getElementById("studentGrade"),
+      studentBio: document.getElementById("studentBio")
+    };
+
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+      if (saved) {
+        Object.keys(fields).forEach((key) => {
+          if (saved[key]) fields[key].value = saved[key];
+        });
+        if (saved.avatarDataUrl) {
+          avatarPreview.src = saved.avatarDataUrl;
+        }
+      }
+    } catch (e) {}
+
+    try {
+      const assessment = JSON.parse(localStorage.getItem("eduMasAssessmentResult") || "null");
+      if (assessment) {
+        document.getElementById("masteryStat").textContent = assessment.mastery_level || "pending";
+      }
+    } catch (e) {}
+
+    avatarInput.addEventListener("change", (event) => {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        avatarPreview.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    saveProfileBtn.addEventListener("click", () => {
+      const payload = {
+        studentName: fields.studentName.value.trim(),
+        studentId: fields.studentId.value.trim(),
+        studentGrade: fields.studentGrade.value.trim(),
+        studentBio: fields.studentBio.value.trim(),
+        avatarDataUrl: avatarPreview.src
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+      alert("学生信息已保存到本地浏览器。");
+    });
+
+    resetAvatarBtn.addEventListener("click", () => {
+      avatarPreview.src = "https://api.dicebear.com/9.x/thumbs/svg?seed=zhangsan";
+    });
+  </script>
+</body>
+</html>

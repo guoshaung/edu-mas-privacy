@@ -59,8 +59,128 @@
     pre { white-space: pre-wrap; word-break: break-word; background: #f8fafc; border: 1px solid var(--line); border-radius: 14px; padding: 14px; color: #334155; }
     .slider-row { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center; }
     .mini-note { font-size: .9rem; color: var(--muted); }
+    .companion-panel {
+      position: fixed;
+      right: 22px;
+      bottom: 320px;
+      width: min(320px, calc(100vw - 24px));
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+      z-index: 998;
+    }
+    .companion-panel.minimized .companion-body {
+      display: none;
+    }
+    .companion-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      cursor: move;
+    }
+    .companion-title-wrap {
+      min-width: 0;
+    }
+    .companion-panel h3 {
+      margin: 0 0 8px;
+      font-size: 1rem;
+    }
+    .companion-header h3 {
+      margin: 0;
+    }
+    .companion-header-actions {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .icon-btn {
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--text);
+      border-radius: 999px;
+      width: 32px;
+      height: 32px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+    .companion-status {
+      font-size: .92rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+    .companion-preview {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fbfdff;
+      min-height: 72px;
+      white-space: pre-wrap;
+      line-height: 1.65;
+      color: #334155;
+    }
+    .companion-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .companion-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 10px;
+      border-radius: 999px;
+      background: var(--soft);
+      color: var(--primary);
+      font-size: .84rem;
+      font-weight: 700;
+    }
+    .waifu {
+      z-index: 997 !important;
+      left: auto !important;
+      right: 12px !important;
+      bottom: -6px !important;
+    }
+    #waifu {
+      left: auto !important;
+      right: 12px !important;
+      bottom: -6px !important;
+    }
+    #waifu-tool {
+      left: auto !important;
+      right: 16px !important;
+    }
+    .companion-field {
+      margin-top: 12px;
+      display: grid;
+      gap: 8px;
+    }
+    .companion-field label {
+      font-size: .88rem;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .companion-select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px;
+      background: #fff;
+      color: var(--text);
+    }
     @media (max-width: 980px) {
       .hero-grid, .grid { grid-template-columns: 1fr; }
+      .companion-panel {
+        right: 12px;
+        left: 12px;
+        bottom: 286px;
+        width: auto;
+      }
     }
   </style>
 </head>
@@ -155,6 +275,38 @@
     </section>
   </div>
 
+  <aside class="companion-panel" id="companionPanel">
+    <div class="companion-header" id="companionHeader">
+      <div class="companion-title-wrap">
+        <h3 id="companionTitle"></h3>
+      </div>
+      <div class="companion-header-actions">
+        <button class="icon-btn" id="minimizeCompanionBtn" type="button" title="toggle">-</button>
+        <button class="icon-btn" id="closeCompanionBtn" type="button" title="close">x</button>
+      </div>
+    </div>
+    <div class="companion-body" id="companionBody">
+      <div class="companion-status" id="companionStatus"></div>
+      <div style="margin-top:10px;">
+        <span class="companion-chip" id="voiceStateChip"></span>
+        <span class="companion-chip" id="widgetStateChip"></span>
+      </div>
+      <div class="companion-preview" id="companionPreview"></div>
+      <div class="companion-field">
+        <label id="voiceLabel" for="voiceSelect"></label>
+        <select class="companion-select" id="voiceSelect"></select>
+      </div>
+      <div class="companion-field">
+        <label id="emotionLabel" for="emotionSelect"></label>
+        <select class="companion-select" id="emotionSelect"></select>
+      </div>
+      <div class="companion-actions">
+        <button class="btn secondary" id="toggleVoiceBtn" type="button"></button>
+        <button class="btn secondary" id="replayVoiceBtn" type="button"></button>
+      </div>
+    </div>
+  </aside>
+
   <script>
     const TEXT = {
       pageTitle: "\u81ea\u9002\u5e94\u8f85\u5bfc\u5de5\u4f5c\u53f0",
@@ -204,13 +356,45 @@
       statusUpdated: "\u8f85\u5bfc\u56de\u590d\u5df2\u66f4\u65b0\u3002",
       statusCleared: "\u672c\u5730\u8f85\u5bfc\u4f1a\u8bdd\u5df2\u6e05\u7a7a\u3002",
       restartHint: "\u5982\u679c\u4f60\u521a\u6539\u8fc7\u540e\u7aef\uff0c\u8bf7\u5148\u91cd\u542f 8010 \u7f51\u5173\u3002",
-      apiMissing: "\u672a\u627e\u5230\u53ef\u7528\u7684\u8f85\u5bfc\u63a5\u53e3\uff0c\u8bf7\u91cd\u542f 8010 \u7f51\u5173\u670d\u52a1\u3002"
+      apiMissing: "\u672a\u627e\u5230\u53ef\u7528\u7684\u8f85\u5bfc\u63a5\u53e3\uff0c\u8bf7\u91cd\u542f 8010 \u7f51\u5173\u670d\u52a1\u3002",
+      companionTitle: "\u53f3\u4e0b\u89d2\u770b\u677f\u5a18",
+      companionIdle: "\u770b\u677f\u5a18\u5df2\u5c31\u4f4d\uff0c\u4f1a\u8ddf\u7740 AG3 \u7684\u6700\u65b0\u8f85\u5bfc\u56de\u590d\u64ad\u62a5\u8bed\u97f3\u3002",
+      companionFallback: "\u5982\u679c\u6a21\u578b\u672a\u663e\u793a\uff0c\u8bf7\u7a0d\u7b49\u7247\u523b\u6216\u68c0\u67e5\u5916\u7f51 CDN \u662f\u5426\u53ef\u8bbf\u95ee\u3002",
+      companionWaiting: "\u6682\u65e0\u53ef\u64ad\u62a5\u7684\u8f85\u5bfc\u56de\u590d\u3002",
+      companionReplay: "\u91cd\u64ad\u6700\u65b0\u56de\u590d",
+      companionMute: "\u5173\u95ed\u8bed\u97f3",
+      companionUnmute: "\u5f00\u542f\u8bed\u97f3",
+      companionVoiceOn: "\u8bed\u97f3\u5df2\u5f00\u542f",
+      companionVoiceOff: "\u8bed\u97f3\u5df2\u5173\u95ed",
+      companionWidgetLoading: "Live2D \u52a0\u8f7d\u4e2d",
+      companionWidgetReady: "Live2D \u5df2\u5c31\u7eea",
+      companionWidgetFailed: "Live2D \u52a0\u8f7d\u5931\u8d25",
+      voiceLabel: "\u8bed\u97f3\u97f3\u8272",
+      voiceNoSupport: "\u5f53\u524d\u672a\u914d\u7f6e\u53ef\u7528\u7684\u8baf\u98de\u97f3\u8272",
+      emotionLabel: "\u64ad\u62a5\u98ce\u683c",
+      emotionNeutral: "\u8001\u5e08\u6e29\u548c",
+      emotionBright: "\u5143\u6c14\u9f13\u52b1",
+      emotionCalm: "\u8010\u5fc3\u6162\u8bb2",
+      emotionFirm: "\u91cd\u70b9\u63d0\u793a",
+      ttsFallback: "\u8baf\u98de\u8bed\u97f3\u6682\u4e0d\u53ef\u7528\uff0c\u5df2\u56de\u9000\u5230\u6d4f\u89c8\u5668\u8bed\u97f3\u3002",
+      companionMinimize: "\u6536\u8d77",
+      companionExpand: "\u5c55\u5f00",
+      companionClosed: "\u770b\u677f\u5a18\u9762\u677f\u5df2\u5173\u95ed\uff0c\u5237\u65b0\u9875\u9762\u53ef\u6062\u590d\u3002"
     };
 
     const API_CANDIDATES = [
       "http://127.0.0.1:8010/chat/tutoring",
       "http://127.0.0.1:8010/api/chat/tutoring",
       "http://127.0.0.1:8010/api/tutoring"
+    ];
+    const TTS_API_CANDIDATES = [
+      "http://127.0.0.1:8010/tts/speak",
+      "http://127.0.0.1:8010/api/tts/speak"
+    ];
+    const TTS_VOICE_OPTIONS = [
+      { value: "xiaoyan", label: "\u8baf\u98de\u5c0f\u71d5" },
+      { value: "xiaofeng", label: "\u8baf\u98de\u5c0f\u5cf0" },
+      { value: "xiaomei", label: "\u8baf\u98de\u5c0f\u6885" }
     ];
     const PLANNING_KEY = "eduMasPlanningResult";
     const DIAGNOSIS_KEY = "eduMasDiagnosisResult";
@@ -258,16 +442,49 @@
     const initBtn = document.getElementById("initBtn");
     const clearBtn = document.getElementById("clearBtn");
     const statusText = document.getElementById("statusText");
+    const companionPanel = document.getElementById("companionPanel");
+    const companionHeader = document.getElementById("companionHeader");
+    const companionBody = document.getElementById("companionBody");
+    const companionTitle = document.getElementById("companionTitle");
+    const companionStatus = document.getElementById("companionStatus");
+    const companionPreview = document.getElementById("companionPreview");
+    const minimizeCompanionBtn = document.getElementById("minimizeCompanionBtn");
+    const closeCompanionBtn = document.getElementById("closeCompanionBtn");
+    const toggleVoiceBtn = document.getElementById("toggleVoiceBtn");
+    const replayVoiceBtn = document.getElementById("replayVoiceBtn");
+    const voiceStateChip = document.getElementById("voiceStateChip");
+    const widgetStateChip = document.getElementById("widgetStateChip");
+    const voiceLabel = document.getElementById("voiceLabel");
+    const voiceSelect = document.getElementById("voiceSelect");
+    const emotionLabel = document.getElementById("emotionLabel");
+    const emotionSelect = document.getElementById("emotionSelect");
 
     topicText.textContent = TEXT.notRead;
     phaseText.textContent = TEXT.notInit;
     llmModeText.textContent = TEXT.notCalled;
     ag4Context.textContent = TEXT.noAg4;
     reflectionPad.textContent = TEXT.noReflection;
+    companionTitle.textContent = TEXT.companionTitle;
+    companionStatus.textContent = `${TEXT.companionIdle} ${TEXT.companionFallback}`;
+    companionPreview.textContent = TEXT.companionWaiting;
+    replayVoiceBtn.textContent = TEXT.companionReplay;
+    voiceLabel.textContent = TEXT.voiceLabel;
+    emotionLabel.textContent = TEXT.emotionLabel;
+    minimizeCompanionBtn.textContent = "-";
 
     const sessionId = (profile?.role || "student") + "_" + (profile?.displayName || "guest") + "_tutoring";
     const fallbackTopic = planningResult?.planning_path?.[0]?.objective || "Matrix Multiplication";
     const currentTopic = planningResult?.prompt_preview?.match(/\u5f53\u524d\u4e3b\u9898:\s*(.*)/)?.[1]?.trim() || fallbackTopic;
+    let voiceEnabled = true;
+    let widgetReady = false;
+    let preferredVoice = null;
+    let lastSpokenReply = "";
+    let selectedEmotion = "neutral";
+    let currentAudio = null;
+    let companionMinimized = false;
+    let draggingCompanion = false;
+    let dragOffsetX = 0;
+    let dragOffsetY = 0;
 
     function buildSanitizedProfile() {
       if (diagnosisResult && typeof diagnosisResult === "object") {
@@ -316,7 +533,7 @@
 
       planList.innerHTML = planningResult.planning_path.map((step, index) => `
         <div class="item">
-          <strong>${TEXT.step} ${index + 1} ? ${step.stage}</strong>
+          <strong>${TEXT.step} ${index + 1} · ${step.stage}</strong>
           <div><b>${TEXT.objective}</b>${step.objective}</div>
           <div class="muted" style="margin-top:6px;"><b>${TEXT.advice}</b>${step.recommended_action}</div>
         </div>
@@ -348,6 +565,243 @@
       localStorage.setItem(SESSION_KEY, JSON.stringify(data));
     }
 
+    function refreshCompanionChips() {
+      voiceStateChip.textContent = voiceEnabled ? TEXT.companionVoiceOn : TEXT.companionVoiceOff;
+      widgetStateChip.textContent = widgetReady ? TEXT.companionWidgetReady : TEXT.companionWidgetLoading;
+      toggleVoiceBtn.textContent = voiceEnabled ? TEXT.companionMute : TEXT.companionUnmute;
+    }
+
+    function refreshCompanionPanelState() {
+      companionPanel.classList.toggle("minimized", companionMinimized);
+      minimizeCompanionBtn.textContent = companionMinimized ? "+" : "-";
+      minimizeCompanionBtn.title = companionMinimized ? TEXT.companionExpand : TEXT.companionMinimize;
+    }
+
+    function startCompanionDrag(event) {
+      draggingCompanion = true;
+      const rect = companionPanel.getBoundingClientRect();
+      dragOffsetX = event.clientX - rect.left;
+      dragOffsetY = event.clientY - rect.top;
+      companionPanel.style.left = `${rect.left}px`;
+      companionPanel.style.top = `${rect.top}px`;
+      companionPanel.style.right = "auto";
+      companionPanel.style.bottom = "auto";
+    }
+
+    function moveCompanion(event) {
+      if (!draggingCompanion) {
+        return;
+      }
+      const nextLeft = Math.max(8, Math.min(window.innerWidth - companionPanel.offsetWidth - 8, event.clientX - dragOffsetX));
+      const nextTop = Math.max(8, Math.min(window.innerHeight - companionPanel.offsetHeight - 8, event.clientY - dragOffsetY));
+      companionPanel.style.left = `${nextLeft}px`;
+      companionPanel.style.top = `${nextTop}px`;
+    }
+
+    function stopCompanionDrag() {
+      draggingCompanion = false;
+    }
+
+    function sanitizeSpeechText(text) {
+      return String(text || "")
+        .replace(/https?:\/\/\S+/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    function pickVoice() {
+      const voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+      preferredVoice = voices.find((voice) => voice.lang === "zh-CN")
+        || voices.find((voice) => voice.lang.toLowerCase().startsWith("zh"))
+        || voices.find((voice) => voice.default)
+        || null;
+    }
+
+    function populateVoices() {
+      voiceSelect.innerHTML = "";
+      TTS_VOICE_OPTIONS.forEach((voice) => {
+        const option = document.createElement("option");
+        option.value = voice.value;
+        option.textContent = voice.label;
+        voiceSelect.appendChild(option);
+      });
+      if (!TTS_VOICE_OPTIONS.length) {
+        const emptyOption = document.createElement("option");
+        emptyOption.value = "";
+        emptyOption.textContent = TEXT.voiceNoSupport;
+        voiceSelect.appendChild(emptyOption);
+      }
+      voiceSelect.value = TTS_VOICE_OPTIONS[0]?.value || "";
+    }
+
+    function populateEmotionPresets() {
+      const options = [
+        { value: "neutral", label: TEXT.emotionNeutral },
+        { value: "bright", label: TEXT.emotionBright },
+        { value: "calm", label: TEXT.emotionCalm },
+        { value: "firm", label: TEXT.emotionFirm }
+      ];
+      emotionSelect.innerHTML = options.map((item) => `<option value="${item.value}">${item.label}</option>`).join("");
+      emotionSelect.value = selectedEmotion;
+    }
+
+    function getSpeechStyle() {
+      if (selectedEmotion === "bright") {
+        return { rate: 1.08, pitch: 1.18, volume: 1 };
+      }
+      if (selectedEmotion === "calm") {
+        return { rate: 0.9, pitch: 0.92, volume: 0.95 };
+      }
+      if (selectedEmotion === "firm") {
+        return { rate: 0.98, pitch: 0.86, volume: 1 };
+      }
+      return { rate: 1, pitch: 1.02, volume: 1 };
+    }
+
+    function resolveSelectedBrowserVoice() {
+      const voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+      if (voiceSelect.value && voices[Number(voiceSelect.value)]) {
+        return voices[Number(voiceSelect.value)];
+      }
+      return preferredVoice;
+    }
+
+    async function callTtsApi(text) {
+      const body = {
+        text,
+        voice_name: voiceSelect.value || "xiaoyan",
+        emotion: selectedEmotion
+      };
+
+      let lastError = null;
+      for (const apiUrl of TTS_API_CANDIDATES) {
+        try {
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+          });
+          if (response.status === 404) {
+            lastError = new Error(`API not found: ${apiUrl}`);
+            continue;
+          }
+          const result = await response.json();
+          if (!response.ok) {
+            throw new Error(result.detail || "TTS API failed");
+          }
+          return result;
+        } catch (error) {
+          lastError = error;
+        }
+      }
+      throw lastError || new Error("TTS unavailable");
+    }
+
+    function playAudioBase64(result) {
+      if (currentAudio) {
+        currentAudio.pause();
+      }
+      currentAudio = new Audio(`data:${result.mime_type || "audio/mpeg"};base64,${result.audio_base64}`);
+      currentAudio.play().catch(() => {});
+    }
+
+    function speakByBrowser(text) {
+      const cleanText = sanitizeSpeechText(text);
+      if (!cleanText) {
+        return;
+      }
+      lastSpokenReply = cleanText;
+      companionPreview.textContent = cleanText;
+      if (!voiceEnabled || !("speechSynthesis" in window)) {
+        return;
+      }
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+      const activeVoice = resolveSelectedBrowserVoice();
+      const style = getSpeechStyle();
+      utterance.lang = activeVoice?.lang || "zh-CN";
+      utterance.rate = style.rate;
+      utterance.pitch = style.pitch;
+      utterance.volume = style.volume;
+      if (activeVoice) {
+        utterance.voice = activeVoice;
+      }
+      window.speechSynthesis.speak(utterance);
+    }
+
+    async function speakReply(text) {
+      const cleanText = sanitizeSpeechText(text);
+      if (!cleanText) {
+        return;
+      }
+      lastSpokenReply = cleanText;
+      companionPreview.textContent = cleanText;
+      if (!voiceEnabled) {
+        return;
+      }
+      try {
+        const ttsResult = await callTtsApi(cleanText);
+        playAudioBase64(ttsResult);
+      } catch (error) {
+        companionStatus.textContent = `${TEXT.companionIdle} ${TEXT.ttsFallback}`;
+        speakByBrowser(cleanText);
+      }
+    }
+
+    async function syncCompanionWithResult(result) {
+      const latestReply = sanitizeSpeechText(result?.tutor_reply || "");
+      if (latestReply) {
+        await speakReply(latestReply);
+        return;
+      }
+      const history = result?.chat_history_preview || [];
+      const latestAi = [...history].reverse().find((item) => item.role === "ai");
+      if (latestAi?.content) {
+        await speakReply(latestAi.content);
+      }
+    }
+
+    function setupLive2DWidget() {
+      if (document.querySelector('script[data-live2d-autoload="true"]')) {
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = "https://fastly.jsdelivr.net/npm/live2d-widgets@1.0.0-rc.4/dist/autoload.js";
+      script.async = true;
+      script.dataset.live2dAutoload = "true";
+      script.onload = () => {
+        const tryInit = () => {
+          if (typeof window.initWidget !== "function") {
+            window.setTimeout(tryInit, 150);
+            return;
+          }
+          window.initWidget({
+            waifuPath: "https://fastly.jsdelivr.net/npm/live2d-widgets@1/dist/waifu-tips.json",
+            cubism2Path: "https://fastly.jsdelivr.net/npm/live2d-widgets@1/dist/live2d.min.js",
+            modelId: 1,
+            tools: ["switch-model", "switch-texture", "photo", "info", "quit"],
+            drag: true,
+            logLevel: "warn"
+          });
+          widgetReady = true;
+          refreshCompanionChips();
+          const waifuNode = document.getElementById("waifu");
+          if (waifuNode) {
+            waifuNode.style.left = "auto";
+            waifuNode.style.right = "12px";
+            waifuNode.style.bottom = "-6px";
+          }
+        };
+        tryInit();
+      };
+      script.onerror = () => {
+        widgetReady = false;
+        widgetStateChip.textContent = TEXT.companionWidgetFailed;
+        companionStatus.textContent = `${TEXT.companionIdle} ${TEXT.companionFallback}`;
+      };
+      document.body.appendChild(script);
+    }
+
     function restoreSession() {
       const raw = localStorage.getItem(SESSION_KEY);
       if (!raw) {
@@ -361,6 +815,7 @@
         ag4Context.textContent = saved.ag4_retrieved_context || TEXT.noAg4;
         reflectionPad.textContent = saved.reflection_scratchpad || TEXT.noReflection;
         renderChat(saved.chat_history_preview || []);
+        companionPreview.textContent = saved.tutor_reply || TEXT.companionWaiting;
         return saved;
       } catch {
         renderChat([]);
@@ -413,6 +868,7 @@
         reflectionPad.textContent = result.reflection_scratchpad || TEXT.noReflection;
         renderChat(result.chat_history_preview || []);
         persistSession(result);
+        await syncCompanionWithResult(result);
         setStatus(TEXT.statusInitOk, "ok");
       } catch (error) {
         setStatus(`\u521d\u59cb\u5316\u5931\u8d25\uff1a${error.message}\u3002${TEXT.restartHint}`, "error");
@@ -440,6 +896,7 @@
         reflectionPad.textContent = result.reflection_scratchpad || TEXT.noReflection;
         renderChat(result.chat_history_preview || []);
         persistSession(result);
+        await syncCompanionWithResult(result);
         setStatus(result.need_ag4_search ? TEXT.statusAg4 : TEXT.statusUpdated, "ok");
       } catch (error) {
         setStatus(`\u8c03\u7528\u5931\u8d25\uff1a${error.message}\u3002${TEXT.restartHint}`, "error");
@@ -456,6 +913,11 @@
       phaseText.textContent = TEXT.notInit;
       llmModeText.textContent = TEXT.notCalled;
       messageInput.value = "";
+      companionPreview.textContent = TEXT.companionWaiting;
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio = null;
+      }
       renderChat([]);
       setStatus(TEXT.statusCleared, "ok");
     }
@@ -464,12 +926,68 @@
     sendBtn.addEventListener("click", sendMessage);
     initBtn.addEventListener("click", initializeTutoring);
     clearBtn.addEventListener("click", clearSession);
+    toggleVoiceBtn.addEventListener("click", () => {
+      voiceEnabled = !voiceEnabled;
+      if (!voiceEnabled && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+      if (!voiceEnabled && currentAudio) {
+        currentAudio.pause();
+      }
+      refreshCompanionChips();
+      if (voiceEnabled && lastSpokenReply) {
+        speakReply(lastSpokenReply);
+      }
+    });
+    minimizeCompanionBtn.addEventListener("click", () => {
+      companionMinimized = !companionMinimized;
+      refreshCompanionPanelState();
+    });
+    closeCompanionBtn.addEventListener("click", () => {
+      companionPanel.style.display = "none";
+      setStatus(TEXT.companionClosed, "ok");
+    });
+    replayVoiceBtn.addEventListener("click", () => {
+      if (lastSpokenReply) {
+        speakReply(lastSpokenReply);
+      } else {
+        companionPreview.textContent = TEXT.companionWaiting;
+      }
+    });
+    voiceSelect.addEventListener("change", () => {
+      if (lastSpokenReply && voiceEnabled) {
+        speakReply(lastSpokenReply);
+      }
+    });
+    emotionSelect.addEventListener("change", () => {
+      selectedEmotion = emotionSelect.value || "neutral";
+      if (lastSpokenReply && voiceEnabled) {
+        speakReply(lastSpokenReply);
+      }
+    });
+    companionHeader.addEventListener("pointerdown", (event) => {
+      if (event.target.closest("button")) {
+        return;
+      }
+      startCompanionDrag(event);
+    });
+    window.addEventListener("pointermove", moveCompanion);
+    window.addEventListener("pointerup", stopCompanionDrag);
     messageInput.addEventListener("keydown", (event) => {
       if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
         sendMessage();
       }
     });
+    populateVoices();
+    populateEmotionPresets();
+    if ("speechSynthesis" in window) {
+      pickVoice();
+      window.speechSynthesis.addEventListener?.("voiceschanged", pickVoice);
+    }
 
+    refreshCompanionChips();
+    refreshCompanionPanelState();
+    setupLive2DWidget();
     updateRiskUi();
     renderPlanning();
     if (!restoreSession()) {

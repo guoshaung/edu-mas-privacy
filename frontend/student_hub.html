@@ -10,8 +10,12 @@
     * { box-sizing:border-box; }
     body { margin:0; background:var(--bg); color:var(--text); font-family:"Noto Sans SC",sans-serif; }
     .shell { width:min(1160px, calc(100% - 28px)); margin:0 auto; padding:24px 0 40px; }
-    .topbar,.card,.hero,.planning-bridge { background:var(--panel); border:1px solid var(--line); border-radius:20px; box-shadow:var(--shadow); }
+    .topbar,.card,.hero,.planning-bridge,.menu-bar { background:var(--panel); border:1px solid var(--line); border-radius:20px; box-shadow:var(--shadow); }
     .topbar { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:18px 22px; margin-bottom:20px; }
+    .menu-bar { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:14px 18px; margin-bottom:20px; }
+    .menu-links { display:flex; gap:10px; flex-wrap:wrap; }
+    .menu-link { display:inline-flex; align-items:center; padding:10px 14px; border-radius:999px; text-decoration:none; font-weight:700; color:var(--primary); background:var(--soft); }
+    .menu-link.active { background:#243447; color:#fff; }
     .muted { color:var(--muted); }
     .pill { display:inline-flex; align-items:center; padding:8px 12px; border-radius:999px; background:var(--soft); color:var(--primary); font-weight:700; }
     .hero { padding:28px; margin-bottom:20px; }
@@ -33,10 +37,19 @@
 </head>
 <body>
   <div class="shell">
+    <nav class="menu-bar">
+      <div class="menu-links">
+        <a class="menu-link active" href="student_hub.html">功能页面</a>
+        <a class="menu-link" href="student_profile.html">学生页面</a>
+        <a class="menu-link" href="privacy_lab.html">隐私测试页</a>
+      </div>
+      <div class="pill">Demo 导航菜单</div>
+    </nav>
+
     <header class="topbar">
       <div>
         <div style="font-size:1.5rem;font-weight:700;">学生功能总览</div>
-        <div class="muted" id="welcomeText">先从四个模块中选择一个，再进入对应的具体功能页面。</div>
+        <div class="muted" id="welcomeText">先从顶部菜单或四个模块中进入具体功能页面。</div>
       </div>
       <div class="pill">四个功能模块</div>
     </header>
@@ -64,6 +77,10 @@
           <div id="planningImpact">
             <span class="tag">待生成规划</span>
           </div>
+        </div>
+        <div class="bridge-box">
+          <strong>最近一次知识检验</strong>
+          <div id="assessmentSummary" class="muted">尚未生成知识检验结果。</div>
         </div>
       </div>
     </section>
@@ -120,6 +137,15 @@
           '<span class="success-tag">知识检验已联动</span>',
           `<span class="tag">首阶段：${planningResult.planning_path[0].stage}</span>`
         ].join('');
+      }
+    } catch (e) {}
+
+    try {
+      const assessmentResult = JSON.parse(localStorage.getItem("eduMasAssessmentResult") || "null");
+      if (assessmentResult && typeof assessmentResult === "object") {
+        const score = `${assessmentResult.score || 0}/${assessmentResult.total || 0}`;
+        const mastery = assessmentResult.mastery_level || "pending";
+        document.getElementById("assessmentSummary").textContent = `最近一次得分 ${score}，掌握度 ${mastery}。`;
       }
     } catch (e) {}
   </script>

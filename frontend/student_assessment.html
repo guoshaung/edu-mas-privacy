@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>知识检验</title>
+  <title>&#30693;&#35782;&#26816;&#39564;</title>
   <style>
     :root {
       --bg: #f6f8fb;
@@ -11,90 +11,418 @@
       --text: #243447;
       --muted: #6b7c93;
       --line: #dbe3ee;
-      --primary: #7c3aed;
-      --soft: #f4efff;
+      --primary: #2563eb;
+      --soft: #eef4ff;
+      --success: #166534;
+      --success-soft: #ecfdf3;
+      --warn: #b45309;
+      --warn-soft: #fff7ed;
+      --danger: #b42318;
+      --shadow: 0 12px 32px rgba(36, 52, 71, 0.08);
     }
     * { box-sizing: border-box; }
-    body { margin:0; background:var(--bg); color:var(--text); font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; }
-    .shell { width:min(1080px, calc(100% - 28px)); margin:0 auto; padding:24px 0 40px; }
-    .topbar,.card { background:#fff; border:1px solid var(--line); border-radius:20px; box-shadow:0 12px 32px rgba(36,52,71,.08); }
-    .topbar { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:18px 22px; margin-bottom:20px; }
-    .topbar a { color:#244e7a; text-decoration:none; font-weight:600; }
-    .grid { display:grid; grid-template-columns: 1fr 1fr; gap:18px; }
-    .card { padding:22px; }
-    .muted { color:var(--muted); line-height:1.8; }
-    .tag { display:inline-flex; padding:6px 10px; border-radius:999px; background:var(--soft); color:var(--primary); font-size:.88rem; font-weight:700; margin-right:8px; margin-bottom:8px; }
-    .list { display:grid; gap:12px; margin-top:14px; }
-    .item { border:1px solid var(--line); border-radius:16px; padding:14px; background:#fbfdff; }
-    .item strong { display:block; margin-bottom:8px; }
-    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif; }
+    .shell { width: min(1180px, calc(100% - 28px)); margin: 0 auto; padding: 24px 0 40px; }
+    .topbar, .card, .hero { background: #fff; border: 1px solid var(--line); border-radius: 20px; box-shadow: var(--shadow); }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 18px 22px; margin-bottom: 20px; }
+    .topbar a { color: #244e7a; text-decoration: none; font-weight: 600; }
+    .hero { padding: 22px; margin-bottom: 20px; }
+    .hero h1 { margin: 0 0 12px; font-size: 2rem; }
+    .hero p, .muted { color: var(--muted); line-height: 1.8; }
+    .hero-grid, .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .card { padding: 22px; }
+    .card h2 { margin: 0 0 12px; font-size: 1.2rem; }
+    .tag { display: inline-flex; padding: 6px 10px; border-radius: 999px; background: var(--soft); color: var(--primary); font-size: .88rem; font-weight: 700; margin-right: 8px; margin-bottom: 8px; }
+    .tag.success { background: var(--success-soft); color: var(--success); }
+    .tag.warn { background: var(--warn-soft); color: var(--warn); }
+    .list { display: grid; gap: 12px; margin-top: 14px; }
+    .item, .question { border: 1px solid var(--line); border-radius: 16px; padding: 14px; background: #fbfdff; }
+    .item strong, .question strong { display: block; margin-bottom: 8px; }
+    .controls { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 16px; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; border: none; border-radius: 14px; padding: 12px 16px; background: var(--primary); color: #fff; font-weight: 700; cursor: pointer; }
+    .btn.secondary { background: #eef4ff; color: #244e7a; border: 1px solid #d8e3f2; }
+    .btn:disabled { opacity: .6; cursor: not-allowed; }
+    .option-list { display: grid; gap: 10px; margin-top: 12px; }
+    .option { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+    .status { margin-top: 10px; font-size: .95rem; }
+    .status.error { color: var(--danger); }
+    .status.ok { color: var(--success); }
+    .score-box { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .metric { border: 1px solid var(--line); border-radius: 14px; padding: 14px; background: #fcfcfd; }
+    .metric strong { display: block; margin-bottom: 8px; }
+    .metric span { font-size: 1.1rem; font-weight: 700; }
+    @media (max-width: 980px) {
+      .hero-grid, .grid, .score-box { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
   <div class="shell">
     <header class="topbar">
       <div>
-        <div style="font-size:1.5rem;font-weight:700;">知识检验</div>
-        <div class="muted">本页会根据学习规划结果确定检验重点，形成更贴近当前路径的阶段性检测。</div>
+        <div id="pageTitle" style="font-size:1.5rem;font-weight:700;"></div>
+        <div id="pageSubtitle" class="muted"></div>
       </div>
-      <a href="student_hub.html">返回功能总览</a>
+      <a href="student_hub.html" id="backLink"></a>
     </header>
+
+    <section class="hero">
+      <h1 id="heroTitle"></h1>
+      <p id="heroText"></p>
+      <div class="hero-grid">
+        <div class="card" style="padding:16px;">
+          <h2 id="summaryTitle"></h2>
+          <div id="summaryTags"></div>
+          <div id="summaryBody" class="muted"></div>
+        </div>
+        <div class="card" style="padding:16px;">
+          <h2 id="sessionTitle"></h2>
+          <div class="score-box">
+            <div class="metric">
+              <strong id="scoreLabel"></strong>
+              <span id="scoreValue">0 / 0</span>
+            </div>
+            <div class="metric">
+              <strong id="masteryLabel"></strong>
+              <span id="masteryValue"></span>
+            </div>
+            <div class="metric">
+              <strong id="modeLabel"></strong>
+              <span id="modeValue"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <section class="grid">
       <article class="card">
-        <h2>规划映射的检验重点</h2>
-        <div id="assessmentTags"></div>
-        <div id="assessmentFocus" class="list"></div>
+        <h2 id="focusTitle"></h2>
+        <div id="focusList" class="list"></div>
       </article>
-
       <article class="card">
-        <h2>建议的阶段性检测</h2>
-        <div id="assessmentPlan" class="list"></div>
+        <h2 id="actionTitle"></h2>
+        <div id="actionTags"></div>
+        <div class="controls">
+          <button class="btn" id="generateBtn"></button>
+          <button class="btn secondary" id="submitBtn"></button>
+          <button class="btn secondary" id="clearBtn"></button>
+        </div>
+        <div id="statusText" class="status"></div>
+      </article>
+    </section>
+
+    <section class="card" style="margin-top:18px;">
+      <h2 id="quizTitle"></h2>
+      <div id="quizList" class="list"></div>
+    </section>
+
+    <section class="grid" style="margin-top:18px;">
+      <article class="card">
+        <h2 id="feedbackTitle"></h2>
+        <div id="feedbackList" class="list"></div>
+      </article>
+      <article class="card">
+        <h2 id="nextFocusTitle"></h2>
+        <div id="nextFocusList" class="list"></div>
       </article>
     </section>
   </div>
 
   <script>
-    const planningResult = JSON.parse(localStorage.getItem("eduMasPlanningResult") || "null");
-    const planningPath = planningResult?.planning_path || [];
+    const TEXT = {
+      pageTitle: "\u77e5\u8bc6\u68c0\u9a8c",
+      pageSubtitle: "\u77e5\u8bc6\u68c0\u9a8c\u5df2\u63a5\u5165\u4e91\u7aef\u63a5\u53e3\uff0c\u652f\u6301\u57fa\u4e8e\u89c4\u5212\u7684\u51fa\u9898\u3001\u4f5c\u7b54\u8bc4\u5206\u4e0e\u540e\u7eed\u5efa\u8bae\u3002",
+      backLink: "\u8fd4\u56de\u529f\u80fd\u603b\u89c8",
+      heroTitle: "\u89c4\u5212\u9a71\u52a8\u7684\u9636\u6bb5\u6027\u68c0\u9a8c",
+      heroText: "\u9875\u9762\u4f1a\u8bfb\u53d6\u6700\u8fd1\u4e00\u6b21\u5b66\u4e60\u89c4\u5212\u4e0e\u5b66\u751f\u8131\u654f\u753b\u50cf\uff0c\u751f\u6210\u66f4\u8d34\u5408\u5f53\u524d\u5b66\u4e60\u9636\u6bb5\u7684\u68c0\u9a8c\u5185\u5bb9\u3002",
+      summaryTitle: "\u5f53\u524d\u68c0\u9a8c\u6982\u89c8",
+      sessionTitle: "\u672c\u8f6e\u7ed3\u679c",
+      scoreLabel: "\u5f97\u5206",
+      masteryLabel: "\u638c\u63e1\u5ea6",
+      modeLabel: "\u8fd0\u884c\u6a21\u5f0f",
+      focusTitle: "\u89c4\u5212\u6620\u5c04\u7684\u68c0\u9a8c\u91cd\u70b9",
+      actionTitle: "\u64cd\u4f5c",
+      quizTitle: "\u68c0\u9a8c\u9898\u76ee",
+      feedbackTitle: "\u8bc4\u5206\u53cd\u9988",
+      nextFocusTitle: "\u4e0b\u4e00\u6b65\u5efa\u8bae",
+      generateBtn: "\u751f\u6210\u672c\u8f6e\u68c0\u9a8c",
+      submitBtn: "\u63d0\u4ea4\u4f5c\u7b54",
+      clearBtn: "\u6e05\u7a7a\u672c\u5730\u7ed3\u679c",
+      noPlanTag: "\u672a\u751f\u6210\u89c4\u5212",
+      noPlanSummary: "\u8bf7\u5148\u5728\u5b66\u4e60\u89c4\u5212\u9875\u751f\u6210\u89c4\u5212\uff0c\u77e5\u8bc6\u68c0\u9a8c\u4f1a\u57fa\u4e8e\u89c4\u5212\u7ed3\u679c\u51fa\u9898\u3002",
+      planRead: "\u5df2\u8bfb\u53d6\u5b66\u4e60\u89c4\u5212",
+      pending: "pending",
+      noQuiz: "\u6682\u65e0\u9898\u76ee\uff0c\u8bf7\u5148\u70b9\u51fb\u201c\u751f\u6210\u672c\u8f6e\u68c0\u9a8c\u201d\u3002",
+      noFeedback: "\u672a\u63d0\u4ea4\u4f5c\u7b54\uff0c\u6682\u65e0\u8bc4\u5206\u53cd\u9988\u3002",
+      noNextFocus: "\u63d0\u4ea4\u4f5c\u7b54\u540e\uff0c\u8fd9\u91cc\u4f1a\u7ed9\u51fa\u540e\u7eed\u68c0\u9a8c\u548c\u5b66\u4e60\u5efa\u8bae\u3002",
+      generating: "\u6b63\u5728\u751f\u6210\u68c0\u9a8c\u9898\u76ee...",
+      generated: "\u68c0\u9a8c\u9898\u76ee\u5df2\u751f\u6210\u3002",
+      submitting: "\u6b63\u5728\u63d0\u4ea4\u4f5c\u7b54\u5e76\u751f\u6210\u53cd\u9988...",
+      submitted: "\u68c0\u9a8c\u7ed3\u679c\u5df2\u66f4\u65b0\u3002",
+      needGenerate: "\u8bf7\u5148\u751f\u6210\u672c\u8f6e\u68c0\u9a8c\u9898\u76ee\u3002",
+      needAnswer: "\u8bf7\u5148\u4f5c\u7b54\u540e\u518d\u63d0\u4ea4\u3002",
+      localCleared: "\u672c\u5730\u68c0\u9a8c\u8bb0\u5f55\u5df2\u6e05\u7a7a\u3002",
+      restartHint: "\u5982\u679c\u4f60\u521a\u6539\u8fc7\u540e\u7aef\uff0c\u8bf7\u5148\u91cd\u542f 8010 \u7f51\u5173\u3002",
+      apiMissing: "\u672a\u627e\u5230\u53ef\u7528\u7684\u77e5\u8bc6\u68c0\u9a8c\u63a5\u53e3\u3002",
+      summaryFocusPrefix: "\u5f53\u524d\u4e3b\u9898\uff1a",
+      summaryPlanPrefix: "\u89c4\u5212\u9636\u6bb5\uff1a",
+      targetPrefix: "\u5bf9\u5e94\u76ee\u6807\uff1a",
+      difficultyPrefix: "\u96be\u5ea6",
+      skillPrefix: "\u80fd\u529b\u70b9"
+    };
 
-    const assessmentTags = document.getElementById("assessmentTags");
-    const assessmentFocus = document.getElementById("assessmentFocus");
-    const assessmentPlan = document.getElementById("assessmentPlan");
+    const API_CANDIDATES = [
+      "http://127.0.0.1:8010/assessment/session",
+      "http://127.0.0.1:8010/api/assessment/session",
+      "http://127.0.0.1:8010/api/session/assessment"
+    ];
+    const PLANNING_KEY = "eduMasPlanningResult";
+    const DIAGNOSIS_KEY = "eduMasDiagnosisResult";
+    const RESULT_KEY = "eduMasAssessmentResult";
+    const SESSION_KEY = "eduMasAssessmentSession";
 
-    if (!planningResult || !planningPath.length) {
-      assessmentTags.innerHTML = '<span class="tag">未生成规划</span>';
-      assessmentFocus.innerHTML = '<div class="item"><strong>暂无检验重点</strong><div class="muted">请先在学习规划页生成规划。</div></div>';
-      assessmentPlan.innerHTML = '<div class="item"><strong>暂无阶段检测建议</strong><div class="muted">规划生成后，这里会自动依据规划路径调整检测内容。</div></div>';
-    } else {
-      assessmentTags.innerHTML = [
-        "概念理解",
-        "维度判断",
-        "计算规范",
-        "迁移应用"
-      ].map((tag) => `<span class="tag">${tag}</span>`).join("");
+    const planningResult = JSON.parse(localStorage.getItem(PLANNING_KEY) || "null");
+    const diagnosisResult = JSON.parse(localStorage.getItem(DIAGNOSIS_KEY) || "null");
+    const savedResult = JSON.parse(localStorage.getItem(RESULT_KEY) || "null");
+    const profile = JSON.parse(sessionStorage.getItem("eduMasProfile") || "null");
 
-      assessmentFocus.innerHTML = planningPath.map((step) => `
+    document.getElementById("pageTitle").textContent = TEXT.pageTitle;
+    document.getElementById("pageSubtitle").textContent = TEXT.pageSubtitle;
+    document.getElementById("backLink").textContent = TEXT.backLink;
+    document.getElementById("heroTitle").textContent = TEXT.heroTitle;
+    document.getElementById("heroText").textContent = TEXT.heroText;
+    document.getElementById("summaryTitle").textContent = TEXT.summaryTitle;
+    document.getElementById("sessionTitle").textContent = TEXT.sessionTitle;
+    document.getElementById("scoreLabel").textContent = TEXT.scoreLabel;
+    document.getElementById("masteryLabel").textContent = TEXT.masteryLabel;
+    document.getElementById("modeLabel").textContent = TEXT.modeLabel;
+    document.getElementById("focusTitle").textContent = TEXT.focusTitle;
+    document.getElementById("actionTitle").textContent = TEXT.actionTitle;
+    document.getElementById("quizTitle").textContent = TEXT.quizTitle;
+    document.getElementById("feedbackTitle").textContent = TEXT.feedbackTitle;
+    document.getElementById("nextFocusTitle").textContent = TEXT.nextFocusTitle;
+    document.getElementById("generateBtn").textContent = TEXT.generateBtn;
+    document.getElementById("submitBtn").textContent = TEXT.submitBtn;
+    document.getElementById("clearBtn").textContent = TEXT.clearBtn;
+
+    const summaryTags = document.getElementById("summaryTags");
+    const summaryBody = document.getElementById("summaryBody");
+    const scoreValue = document.getElementById("scoreValue");
+    const masteryValue = document.getElementById("masteryValue");
+    const modeValue = document.getElementById("modeValue");
+    const focusList = document.getElementById("focusList");
+    const actionTags = document.getElementById("actionTags");
+    const quizList = document.getElementById("quizList");
+    const feedbackList = document.getElementById("feedbackList");
+    const nextFocusList = document.getElementById("nextFocusList");
+    const statusText = document.getElementById("statusText");
+    const generateBtn = document.getElementById("generateBtn");
+    const submitBtn = document.getElementById("submitBtn");
+    const clearBtn = document.getElementById("clearBtn");
+
+    const sessionId = (profile?.role || "student") + "_" + (profile?.displayName || "guest") + "_assessment";
+    const currentTopic = planningResult?.planning_path?.[0]?.objective || "Matrix Multiplication";
+
+    function buildSanitizedProfile() {
+      if (diagnosisResult && typeof diagnosisResult === "object") {
+        return diagnosisResult;
+      }
+      return {
+        cognitive_style: "Visual_High (LDP_noise_added: 0.05)",
+        weakness_tags: ["dimension_mismatch", "calculation_carelessness"],
+        stress_level: "Medium"
+      };
+    }
+
+    function setStatus(message, type) {
+      statusText.className = "status" + (type ? " " + type : "");
+      statusText.textContent = message;
+    }
+
+    function renderPlanningSummary() {
+      if (!planningResult?.planning_path?.length) {
+        summaryTags.innerHTML = `<span class="tag warn">${TEXT.noPlanTag}</span>`;
+        summaryBody.textContent = TEXT.noPlanSummary;
+        focusList.innerHTML = `<div class="item"><strong>${TEXT.noPlanTag}</strong><div class="muted">${TEXT.noPlanSummary}</div></div>`;
+        return;
+      }
+
+      summaryTags.innerHTML = [
+        `<span class="tag success">${TEXT.planRead}</span>`,
+        `<span class="tag">${planningResult.current_agent || "AG3_AdaptiveTutor"}</span>`
+      ].join("");
+      summaryBody.textContent = `${TEXT.summaryFocusPrefix} ${currentTopic} | ${TEXT.summaryPlanPrefix} ${planningResult.planning_path.map((item) => item.stage).join(" -> ")}`;
+      focusList.innerHTML = planningResult.planning_path.map((step, index) => `
         <div class="item">
-          <strong>${step.stage}</strong>
-          <div><b>对应目标：</b>${step.objective}</div>
-          <div class="muted" style="margin-top:6px;">检验会重点围绕这一阶段设计题目和反馈。</div>
-        </div>
-      `).join("");
-
-      const assessments = [
-        "先做 3 道维度匹配判断题，快速检测基础规则是否稳定。",
-        "再做 2 道带步骤矩阵乘法题，检查计算过程是否规范。",
-        "最后做 1 道综合应用题，验证是否具备迁移能力。"
-      ];
-
-      assessmentPlan.innerHTML = assessments.map((item, index) => `
-        <div class="item">
-          <strong>检测环节 ${index + 1}</strong>
-          <div>${item}</div>
+          <strong>${TEXT.summaryPlanPrefix} ${index + 1} ? ${step.stage}</strong>
+          <div><b>${TEXT.targetPrefix}</b>${step.objective}</div>
+          <div class="muted" style="margin-top:6px;">${step.recommended_action}</div>
         </div>
       `).join("");
     }
+
+    function renderQuiz(quiz) {
+      if (!quiz || !quiz.length) {
+        quizList.innerHTML = `<div class="item"><strong>${TEXT.quizTitle}</strong><div class="muted">${TEXT.noQuiz}</div></div>`;
+        return;
+      }
+
+      quizList.innerHTML = quiz.map((item, index) => `
+        <div class="question" data-question-id="${item.question_id}">
+          <strong>${index + 1}. ${item.prompt}</strong>
+          <div class="muted">${TEXT.skillPrefix}?${item.target_skill} | ${TEXT.difficultyPrefix}?${item.difficulty}</div>
+          <div class="option-list">
+            ${item.options.map((option) => {
+              const optionKey = option.trim().charAt(0);
+              return `
+                <label class="option">
+                  <input type="radio" name="${item.question_id}" value="${optionKey}" />
+                  <span>${option}</span>
+                </label>
+              `;
+            }).join("")}
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderResult(result) {
+      scoreValue.textContent = `${result.score || 0} / ${result.total || 0}`;
+      masteryValue.textContent = result.mastery_level || TEXT.pending;
+      modeValue.textContent = result.llm_mode || TEXT.pending;
+
+      feedbackList.innerHTML = (result.feedback && result.feedback.length)
+        ? result.feedback.map((item) => `<div class="item"><strong>${item}</strong></div>`).join("")
+        : `<div class="item"><strong>${TEXT.noFeedback}</strong></div>`;
+
+      nextFocusList.innerHTML = (result.next_focus && result.next_focus.length)
+        ? result.next_focus.map((item) => `<div class="item"><strong>${item}</strong></div>`).join("")
+        : `<div class="item"><strong>${TEXT.noNextFocus}</strong></div>`;
+
+      actionTags.innerHTML = [
+        `<span class="tag">${result.current_phase || "Assessment"}</span>`,
+        `<span class="tag success">${result.gnn_risk_score?.toFixed ? result.gnn_risk_score.toFixed(2) : result.gnn_risk_score}</span>`
+      ].join("");
+    }
+
+    function getLearningPlanText() {
+      return (planningResult?.planning_path || []).map((item) => `${item.stage}: ${item.objective}`);
+    }
+
+    function collectAnswers() {
+      const payload = {};
+      document.querySelectorAll(".question").forEach((question) => {
+        const questionId = question.getAttribute("data-question-id");
+        const selected = question.querySelector("input[type='radio']:checked");
+        if (selected) {
+          payload[questionId] = selected.value;
+        }
+      });
+      return payload;
+    }
+
+    async function callAssessmentApi(action, answers = {}) {
+      const body = {
+        session_id: sessionId,
+        current_topic: currentTopic,
+        sanitized_profile: buildSanitizedProfile(),
+        learning_plan: getLearningPlanText(),
+        action,
+        answers,
+        gnn_risk_score: 0.2
+      };
+
+      let lastError = null;
+      for (const apiUrl of API_CANDIDATES) {
+        try {
+          const response = await fetch(apiUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body)
+          });
+          if (response.status === 404) {
+            lastError = new Error(`API not found: ${apiUrl}`);
+            continue;
+          }
+          const result = await response.json();
+          if (!response.ok) {
+            throw new Error(result.detail || "Assessment API failed");
+          }
+          return result;
+        } catch (error) {
+          lastError = error;
+        }
+      }
+      throw lastError || new Error(TEXT.apiMissing);
+    }
+
+    async function generateAssessment() {
+      generateBtn.disabled = true;
+      submitBtn.disabled = true;
+      setStatus(TEXT.generating, "");
+      try {
+        const result = await callAssessmentApi("generate");
+        localStorage.setItem(SESSION_KEY, JSON.stringify(result));
+        renderQuiz(result.quiz || []);
+        renderResult(result);
+        setStatus(TEXT.generated, "ok");
+      } catch (error) {
+        setStatus(`\u751f\u6210\u5931\u8d25\uff1a${error.message}\u3002${TEXT.restartHint}`, "error");
+      } finally {
+        generateBtn.disabled = false;
+        submitBtn.disabled = false;
+      }
+    }
+
+    async function submitAssessment() {
+      const currentSession = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
+      if (!currentSession?.quiz?.length) {
+        setStatus(TEXT.needGenerate, "error");
+        return;
+      }
+      const answers = collectAnswers();
+      if (!Object.keys(answers).length) {
+        setStatus(TEXT.needAnswer, "error");
+        return;
+      }
+      generateBtn.disabled = true;
+      submitBtn.disabled = true;
+      setStatus(TEXT.submitting, "");
+      try {
+        const result = await callAssessmentApi("submit", answers);
+        localStorage.setItem(SESSION_KEY, JSON.stringify(result));
+        localStorage.setItem(RESULT_KEY, JSON.stringify(result));
+        renderQuiz(result.quiz || []);
+        Object.entries(answers).forEach(([questionId, value]) => {
+          const radio = document.querySelector(`input[name="${questionId}"][value="${value}"]`);
+          if (radio) radio.checked = true;
+        });
+        renderResult(result);
+        setStatus(TEXT.submitted, "ok");
+      } catch (error) {
+        setStatus(`\u63d0\u4ea4\u5931\u8d25\uff1a${error.message}\u3002${TEXT.restartHint}`, "error");
+      } finally {
+        generateBtn.disabled = false;
+        submitBtn.disabled = false;
+      }
+    }
+
+    function clearLocalResult() {
+      localStorage.removeItem(SESSION_KEY);
+      localStorage.removeItem(RESULT_KEY);
+      renderQuiz([]);
+      renderResult({ score: 0, total: 0, mastery_level: TEXT.pending, llm_mode: TEXT.pending, feedback: [], next_focus: [], gnn_risk_score: 0.2, current_phase: "Assessment" });
+      setStatus(TEXT.localCleared, "ok");
+    }
+
+    generateBtn.addEventListener("click", generateAssessment);
+    submitBtn.addEventListener("click", submitAssessment);
+    clearBtn.addEventListener("click", clearLocalResult);
+
+    renderPlanningSummary();
+    renderQuiz(savedResult?.quiz || []);
+    renderResult(savedResult || { score: 0, total: 0, mastery_level: TEXT.pending, llm_mode: TEXT.pending, feedback: [], next_focus: [], gnn_risk_score: 0.2, current_phase: "Assessment" });
   </script>
 </body>
 </html>

@@ -1,0 +1,29 @@
+[
+  {
+    "id": "res_math_matrix_001",
+    "title": "矩阵乘法维度检查讲义",
+    "subject": "数学",
+    "resource_type": "lesson_note",
+    "tags": ["矩阵乘法", "维度匹配", "基础规则"],
+    "content": "先判断左矩阵列数是否等于右矩阵行数，再决定能否相乘。可用行列配对图帮助学生理解。",
+    "source": "教师公共题库"
+  },
+  {
+    "id": "res_math_matrix_002",
+    "title": "矩阵乘法变式题一",
+    "subject": "数学",
+    "resource_type": "exercise",
+    "tags": ["矩阵乘法", "变式题", "计算训练"],
+    "content": "给出两组维度不同的矩阵，让学生先判断是否可乘，再说明原因，最后完成可乘组的运算。",
+    "source": "教师公共题库"
+  },
+  {
+    "id": "res_math_function_001",
+    "title": "二次函数最值教学卡",
+    "subject": "数学",
+    "resource_type": "lesson_note",
+    "tags": ["二次函数", "最值", "图像法"],
+    "content": "结合抛物线开口方向、顶点坐标和对称轴，用图像法帮助学生理解最值问题。",
+    "source": "教师公共题库"
+  }
+]

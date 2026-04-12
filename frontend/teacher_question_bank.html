@@ -1,0 +1,203 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>公共题库管理</title>
+  <style>
+    :root { --bg:#f6f8fb; --panel:#fff; --line:#dbe3ee; --text:#243447; --muted:#6b7c93; --primary:#2f80ed; --soft:#eef4ff; --shadow:0 12px 32px rgba(36,52,71,.08); --success:#166534; --success-soft:#ecfdf3; --danger:#b42318; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; }
+    .shell { width:min(1260px, calc(100% - 28px)); margin:0 auto; padding:24px 0 40px; }
+    .menu-bar,.hero,.card { background:var(--panel); border:1px solid var(--line); border-radius:20px; box-shadow:var(--shadow); }
+    .menu-bar { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:14px 18px; margin-bottom:20px; flex-wrap:wrap; }
+    .menu-links { display:flex; gap:10px; flex-wrap:wrap; }
+    .menu-link { display:inline-flex; align-items:center; padding:10px 14px; border-radius:999px; text-decoration:none; font-weight:700; color:var(--primary); background:var(--soft); }
+    .menu-link.active { background:#243447; color:#fff; }
+    .hero { padding:24px; margin-bottom:20px; }
+    .muted { color:var(--muted); line-height:1.8; }
+    .layout { display:grid; grid-template-columns: 0.95fr 1.05fr; gap:18px; }
+    .card { padding:20px; }
+    .field { display:grid; gap:8px; margin-bottom:14px; }
+    .field label { font-weight:700; }
+    .input, .textarea, .select { width:100%; padding:11px 12px; border:1px solid var(--line); border-radius:12px; font:inherit; }
+    .textarea { min-height:140px; resize:vertical; }
+    .btn-row { display:flex; gap:10px; flex-wrap:wrap; }
+    .btn { display:inline-flex; align-items:center; justify-content:center; padding:10px 14px; border:none; border-radius:12px; font-weight:700; cursor:pointer; }
+    .btn.primary { background:var(--primary); color:#fff; }
+    .btn.soft { background:var(--soft); color:var(--primary); }
+    .status { margin-top:12px; font-size:.95rem; }
+    .status.error { color:var(--danger); }
+    .status.ok { color:var(--success); }
+    .resource-list { display:grid; gap:12px; }
+    .resource-item { border:1px solid var(--line); border-radius:16px; padding:14px; background:#fbfdff; }
+    .tag { display:inline-flex; padding:6px 10px; border-radius:999px; background:var(--soft); color:var(--primary); font-size:.84rem; font-weight:700; margin-right:8px; margin-bottom:8px; }
+    @media (max-width:980px) { .layout { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <nav class="menu-bar">
+      <div class="menu-links">
+        <a class="menu-link" href="teacher_workspace.html">教师工作台</a>
+        <a class="menu-link" href="teacher_agent_monitor.html">多智能体工作台</a>
+        <a class="menu-link active" href="teacher_question_bank.html">公共题库管理</a>
+      </div>
+      <div class="tag">AG4 资源入口</div>
+    </nav>
+
+    <section class="hero">
+      <h1 style="margin:0 0 10px;">公共题库管理</h1>
+      <div class="muted">教师可以在这里补充公共题库与知识文档。AG4 会把这里的资源作为公共 RAG 检索来源，按主题和关键词召回给 AG3 使用。</div>
+    </section>
+
+    <section class="layout">
+      <article class="card">
+        <h2 style="margin-top:0;">投放新资料</h2>
+        <div class="field">
+          <label for="titleInput">资料标题</label>
+          <input id="titleInput" class="input" placeholder="例如：矩阵乘法维度检查讲义" />
+        </div>
+        <div class="field">
+          <label for="subjectInput">学科</label>
+          <input id="subjectInput" class="input" value="数学" />
+        </div>
+        <div class="field">
+          <label for="typeInput">资料类型</label>
+          <select id="typeInput" class="select">
+            <option value="lesson_note">讲义</option>
+            <option value="exercise">题目</option>
+            <option value="knowledge_doc">知识文档</option>
+            <option value="worksheet">练习单</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="tagInput">标签</label>
+          <input id="tagInput" class="input" placeholder="用逗号分隔，例如：矩阵乘法, 维度匹配, 变式题" />
+        </div>
+        <div class="field">
+          <label for="contentInput">资料内容</label>
+          <textarea id="contentInput" class="textarea" placeholder="粘贴教案、题目描述或知识说明"></textarea>
+        </div>
+        <div class="field">
+          <label for="fileInput">从本地文档导入</label>
+          <input id="fileInput" type="file" class="input" />
+        </div>
+        <div class="btn-row">
+          <button class="btn primary" id="submitBtn" type="button">保存到公共题库</button>
+          <button class="btn soft" id="resetBtn" type="button">清空表单</button>
+        </div>
+        <div id="statusText" class="status"></div>
+      </article>
+
+      <article class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+          <div>
+            <h2 style="margin:0 0 6px;">现有题库资源</h2>
+            <div class="muted" id="bankMeta">正在加载...</div>
+          </div>
+          <button class="btn soft" id="refreshBtn" type="button">刷新列表</button>
+        </div>
+        <div class="resource-list" id="resourceList" style="margin-top:16px;"></div>
+      </article>
+    </section>
+  </div>
+
+  <script>
+    const titleInput = document.getElementById('titleInput');
+    const subjectInput = document.getElementById('subjectInput');
+    const typeInput = document.getElementById('typeInput');
+    const tagInput = document.getElementById('tagInput');
+    const contentInput = document.getElementById('contentInput');
+    const fileInput = document.getElementById('fileInput');
+    const statusText = document.getElementById('statusText');
+
+    function setStatus(message, type) {
+      statusText.className = 'status' + (type ? ' ' + type : '');
+      statusText.textContent = message;
+    }
+
+    function resetForm() {
+      titleInput.value = '';
+      subjectInput.value = '数学';
+      typeInput.value = 'lesson_note';
+      tagInput.value = '';
+      contentInput.value = '';
+      fileInput.value = '';
+      setStatus('', '');
+    }
+
+    fileInput.addEventListener('change', async (event) => {
+      const file = event.target.files && event.target.files[0];
+      if (!file) return;
+      const text = await file.text();
+      if (!titleInput.value) {
+        titleInput.value = file.name.replace(/\.[^.]+$/, '');
+      }
+      contentInput.value = text;
+      setStatus('已从本地文件导入内容，可以直接保存到公共题库。', 'ok');
+    });
+
+    async function loadBank() {
+      const list = document.getElementById('resourceList');
+      const meta = document.getElementById('bankMeta');
+      try {
+        const data = await fetch('http://127.0.0.1:8010/teacher/question-bank').then((r) => r.json());
+        meta.textContent = `当前共有 ${data.total} 条资源，覆盖学科：${(data.subjects || []).join('、')}`;
+        list.innerHTML = data.items.map((item) => `
+          <div class="resource-item">
+            <div style="display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+              <strong>${item.title}</strong>
+              <span class="tag">${item.resource_type}</span>
+            </div>
+            <div class="muted">学科：${item.subject} | 来源：${item.source || '教师上传'}</div>
+            <div style="margin-top:10px;">${(item.tags || []).map((tag) => `<span class="tag">${tag}</span>`).join('')}</div>
+            <div class="muted">${item.content}</div>
+          </div>
+        `).join('');
+      } catch (error) {
+        meta.textContent = '题库接口暂不可用。';
+        list.innerHTML = '<div class="muted">请确认 8010 云端网关已启动。</div>';
+      }
+    }
+
+    async function submitResource() {
+      const payload = {
+        title: titleInput.value.trim(),
+        subject: subjectInput.value.trim(),
+        resource_type: typeInput.value,
+        tags: tagInput.value.split(',').map((item) => item.trim()).filter(Boolean),
+        content: contentInput.value.trim(),
+        source: '教师上传'
+      };
+      if (!payload.title || !payload.subject || !payload.content) {
+        setStatus('请至少填写标题、学科和资料内容。', 'error');
+        return;
+      }
+      try {
+        const response = await fetch('http://127.0.0.1:8010/teacher/question-bank', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const result = await response.json();
+        if (!response.ok) {
+          throw new Error(result.detail || '保存失败');
+        }
+        setStatus('资料已保存到公共题库，AG4 后续检索可直接使用。', 'ok');
+        resetForm();
+        loadBank();
+      } catch (error) {
+        setStatus(`保存失败：${error.message}`, 'error');
+      }
+    }
+
+    document.getElementById('submitBtn').addEventListener('click', submitResource);
+    document.getElementById('resetBtn').addEventListener('click', resetForm);
+    document.getElementById('refreshBtn').addEventListener('click', loadBank);
+
+    loadBank();
+  </script>
+</body>
+</html>

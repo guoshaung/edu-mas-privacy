@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import os
 import re
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, TypedDict
 
@@ -12,6 +13,9 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage
 from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
 from pydantic import BaseModel, Field
+
+from gateway.fedgnn_gateway import get_fedgnn_risk_score_for_session
+from gateway.public_bank_store import search_bank
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -67,6 +71,7 @@ class SystemState(TypedDict, total=False):
     llm_mode: str
     llm_error: Optional[str]
     entry_route: Literal["planning", "reflection", "tutoring"]
+    updated_at: str
 
 
 session_store: Dict[str, SystemState] = {}
@@ -191,6 +196,7 @@ def ag3_planning_node(state: SystemState) -> SystemState:
         "current_phase": "Tutoring",
         "llm_mode": llm_mode,
         "llm_error": llm_error,
+        "updated_at": timestamp_text(),
     }
 
 
@@ -289,23 +295,36 @@ def ag3_tutoring_node(state: SystemState) -> SystemState:
         "current_phase": next_phase,
         "llm_mode": llm_mode,
         "llm_error": llm_error,
+        "updated_at": timestamp_text(),
     }
 
 
 def ag4_mining_node(state: SystemState) -> SystemState:
     query = state.get("search_query") or f"{state.get('current_topic', '当前主题')} 公共题库 变式题"
-    retrieved = (
-        f"[AG4公共题库检索] 关键词: {query}\n"
-        "变式题1：判断两个矩阵是否满足可乘条件，并说明理由。\n"
-        "变式题2：给出一组维度不匹配的矩阵，让学生先改写成可乘版本再完成运算。\n"
-        "教案提示：优先用行列配对图解释维度约束，再让学生口头复述规则。"
-    )
+    results = search_bank(query=query, topic=state.get("current_topic", ""), limit=3)
+
+    if results:
+        lines = [f"[AG4 公共题库检索] 关键词: {query}"]
+        for index, item in enumerate(results, start=1):
+            lines.append(
+                f"{index}. {item.get('title', '未命名资源')} | 学科: {item.get('subject', '未分类')} | "
+                f"类型: {item.get('resource_type', 'resource')}"
+            )
+            lines.append(f"   标签: {', '.join(item.get('tags', [])) or '无'}")
+            lines.append(f"   内容: {item.get('content', '')}")
+        retrieved = "\n".join(lines)
+    else:
+        retrieved = (
+            f"[AG4 公共题库检索] 关键词: {query}\n"
+            "当前没有命中教师公共题库，建议教师在题库管理页补充相关讲义、题目或知识文档。"
+        )
 
     return {
         **state,
         "ag4_retrieved_context": retrieved,
         "need_ag4_search": False,
         "current_phase": "Tutoring",
+        "updated_at": timestamp_text(),
     }
 
 
@@ -321,9 +340,9 @@ def reflexion_evaluator_node(state: SystemState) -> SystemState:
         )
         if old_pad:
             reflection = old_pad + "\n" + reflection
-        return {**state, "reflection_scratchpad": reflection}
+        return {**state, "reflection_scratchpad": reflection, "updated_at": timestamp_text()}
 
-    return state
+    return {**state, "updated_at": timestamp_text()}
 
 
 def build_tutoring_graph():
@@ -379,6 +398,10 @@ def serialize_history(messages: List[BaseMessage]) -> List[Dict[str, str]]:
     return serialized
 
 
+def timestamp_text() -> str:
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
 @router.post("/tutoring", response_model=TutoringChatResponse)
 @compat_router.post("/api/chat/tutoring", response_model=TutoringChatResponse, include_in_schema=False)
 @compat_router.post("/api/tutoring", response_model=TutoringChatResponse, include_in_schema=False)
@@ -401,15 +424,20 @@ async def tutoring_chat(request: TutoringChatRequest) -> TutoringChatResponse:
             "search_query": "",
             "llm_mode": "mock",
             "llm_error": None,
+            "updated_at": timestamp_text(),
         },
     )
 
     state["sanitized_profile"] = request.sanitized_profile or state.get("sanitized_profile", {})
     state["current_topic"] = request.current_topic or state.get("current_topic", "General Topic")
-    state["gnn_risk_score"] = request.gnn_risk_score
+    state["gnn_risk_score"] = max(
+        request.gnn_risk_score,
+        get_fedgnn_risk_score_for_session(request.session_id, fallback=request.gnn_risk_score),
+    )
     state["latest_user_message"] = request.user_message.strip()
     state["need_ag4_search"] = False
     state["search_query"] = ""
+    state["updated_at"] = timestamp_text()
 
     if request.user_message.strip():
         state["chat_history"] = list(state.get("chat_history", [])) + [HumanMessage(content=request.user_message.strip())]

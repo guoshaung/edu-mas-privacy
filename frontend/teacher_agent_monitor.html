@@ -1,0 +1,160 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>多智能体工作台</title>
+  <style>
+    :root { --bg:#f6f8fb; --panel:#fff; --line:#dbe3ee; --text:#243447; --muted:#6b7c93; --primary:#2f80ed; --soft:#eef4ff; --shadow:0 12px 32px rgba(36,52,71,.08); --success:#166534; --success-soft:#ecfdf3; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; }
+    .shell { width:min(1260px, calc(100% - 28px)); margin:0 auto; padding:24px 0 40px; }
+    .menu-bar,.hero,.card { background:var(--panel); border:1px solid var(--line); border-radius:20px; box-shadow:var(--shadow); }
+    .menu-bar { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:14px 18px; margin-bottom:20px; flex-wrap:wrap; }
+    .menu-links { display:flex; gap:10px; flex-wrap:wrap; }
+    .menu-link { display:inline-flex; align-items:center; padding:10px 14px; border-radius:999px; text-decoration:none; font-weight:700; color:var(--primary); background:var(--soft); }
+    .menu-link.active { background:#243447; color:#fff; }
+    .hero { padding:24px; margin-bottom:20px; }
+    .muted { color:var(--muted); line-height:1.8; }
+    .layout { display:grid; grid-template-columns: 340px 1fr; gap:18px; }
+    .card { padding:20px; }
+    .session-list { display:grid; gap:12px; }
+    .session-item { border:1px solid var(--line); border-radius:14px; padding:14px; background:#fbfdff; cursor:pointer; }
+    .session-item.active { border-color:var(--primary); background:var(--soft); }
+    .agent-grid { display:grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap:14px; margin-top:14px; }
+    .agent-card { border:1px solid var(--line); border-radius:16px; padding:14px; background:#fbfdff; }
+    .tag { display:inline-flex; padding:6px 10px; border-radius:999px; font-size:.84rem; font-weight:700; margin-right:8px; margin-bottom:8px; }
+    .tag.info { background:var(--soft); color:var(--primary); }
+    .tag.success { background:var(--success-soft); color:var(--success); }
+    .flow-list, .timeline { display:grid; gap:10px; margin-top:14px; }
+    .flow-item, .timeline-item { border-left:4px solid #93c5fd; padding:4px 0 4px 14px; }
+    @media (max-width:980px) { .layout, .agent-grid { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <nav class="menu-bar">
+      <div class="menu-links">
+        <a class="menu-link" href="teacher_workspace.html">教师工作台</a>
+        <a class="menu-link active" href="teacher_agent_monitor.html">多智能体工作台</a>
+        <a class="menu-link" href="teacher_question_bank.html">公共题库管理</a>
+      </div>
+      <div class="tag info">AG2-AG5 脱敏信息流动</div>
+    </nav>
+
+    <section class="hero">
+      <h1 style="margin:0 0 10px;">多智能体工作台</h1>
+      <div class="muted">教师在这里看到的是脱敏后的教学信息流动，而不是学生本地完整画像。只展示主题、阶段、风险分数、教学摘要和 AG2-AG5 的工作状态。</div>
+    </section>
+
+    <section class="layout">
+      <article class="card">
+        <h2 style="margin-top:0;">活跃学生会话</h2>
+        <div id="sessionCount" class="muted">正在读取中...</div>
+        <div class="session-list" id="sessionList" style="margin-top:14px;"></div>
+      </article>
+
+      <article class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+          <div>
+            <h2 style="margin:0 0 6px;">当前脱敏工作流</h2>
+            <div class="muted" id="detailHint">选择左侧一个会话查看 AG2-AG5 的工作情况。</div>
+          </div>
+          <div class="tag info" id="detailRisk">风险分数 --</div>
+        </div>
+
+        <div class="agent-grid" id="agentGrid"></div>
+
+        <div class="card" style="margin-top:18px; padding:16px; box-shadow:none;">
+          <h3 style="margin:0 0 8px;">教学流动摘要</h3>
+          <div class="muted" id="messageExcerpt">暂无内容。</div>
+          <div class="flow-list" id="flowList"></div>
+        </div>
+
+        <div class="card" style="margin-top:18px; padding:16px; box-shadow:none;">
+          <h3 style="margin:0 0 8px;">时间线</h3>
+          <div class="timeline" id="timelinePanel"></div>
+        </div>
+      </article>
+    </section>
+  </div>
+
+  <script>
+    let monitorData = { sessions: [] };
+    let selectedSessionId = null;
+
+    function renderSessionList() {
+      const container = document.getElementById('sessionList');
+      const count = monitorData.session_count || 0;
+      document.getElementById('sessionCount').textContent = `当前共有 ${count} 个学生会话。`;
+      if (!monitorData.sessions || !monitorData.sessions.length) {
+        container.innerHTML = '<div class="muted">当前还没有学生正在使用系统。你可以先在学生端进入规划或辅导模块，再回来观察。</div>';
+        renderSessionDetail(null);
+        return;
+      }
+      container.innerHTML = monitorData.sessions.map((session) => `
+        <div class="session-item ${session.session_id === selectedSessionId ? 'active' : ''}" data-id="${session.session_id}">
+          <div style="font-weight:700;">${session.student_alias}</div>
+          <div class="muted">主题：${session.current_topic}</div>
+          <div class="muted">阶段：${session.current_phase}</div>
+        </div>
+      `).join('');
+      container.querySelectorAll('.session-item').forEach((node) => {
+        node.addEventListener('click', () => {
+          selectedSessionId = node.getAttribute('data-id');
+          renderSessionList();
+        });
+      });
+      if (!selectedSessionId) {
+        selectedSessionId = monitorData.sessions[0].session_id;
+      }
+      renderSessionDetail(monitorData.sessions.find((item) => item.session_id === selectedSessionId) || monitorData.sessions[0]);
+    }
+
+    function renderSessionDetail(session) {
+      const agentGrid = document.getElementById('agentGrid');
+      const flowList = document.getElementById('flowList');
+      const timelinePanel = document.getElementById('timelinePanel');
+      if (!session) {
+        document.getElementById('detailHint').textContent = '选择左侧一个会话查看 AG2-AG5 的工作情况。';
+        document.getElementById('detailRisk').textContent = '风险分数 --';
+        document.getElementById('messageExcerpt').textContent = '暂无内容。';
+        agentGrid.innerHTML = '';
+        flowList.innerHTML = '';
+        timelinePanel.innerHTML = '';
+        return;
+      }
+      document.getElementById('detailHint').textContent = `${session.student_alias} / ${session.current_topic} / 更新时间 ${session.updated_at}`;
+      document.getElementById('detailRisk').textContent = `风险分数 ${Number(session.risk_score).toFixed(2)}`;
+      document.getElementById('messageExcerpt').textContent = session.message_excerpt;
+      agentGrid.innerHTML = (session.agent_cards || []).map((agent) => `
+        <div class="agent-card">
+          <strong>${agent.agent}</strong>
+          <div style="margin-top:8px;"><span class="tag ${agent.status === 'done' || agent.status === 'ready' ? 'success' : 'info'}">${agent.status}</span></div>
+          <div class="muted">${agent.summary}</div>
+        </div>
+      `).join('');
+      flowList.innerHTML = (session.teaching_flow || []).map((item) => `<div class="flow-item">${item}</div>`).join('');
+      timelinePanel.innerHTML = [
+        `A1 已上传脱敏画像，当前主题为 ${session.current_topic}`,
+        `AG3 当前阶段：${session.current_phase}`,
+        `AG4 检索状态已根据辅导需求动态触发`,
+        `教师侧只能看到脱敏摘要，无法读取学生本地完整画像`
+      ].map((item) => `<div class="timeline-item">${item}</div>`).join('');
+    }
+
+    async function loadMonitor() {
+      try {
+        monitorData = await fetch('http://127.0.0.1:8010/teacher/agent-monitor').then((r) => r.json());
+      } catch (error) {
+        monitorData = { session_count: 0, sessions: [] };
+      }
+      renderSessionList();
+    }
+
+    loadMonitor();
+    setInterval(loadMonitor, 5000);
+  </script>
+</body>
+</html>

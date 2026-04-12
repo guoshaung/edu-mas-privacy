@@ -12,6 +12,8 @@ from langchain_openai import ChatOpenAI
 from langgraph.graph import END, StateGraph
 from pydantic import BaseModel, Field
 
+from gateway.fedgnn_gateway import get_fedgnn_risk_score_for_session
+
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(PROJECT_ROOT / ".env", override=True, encoding="utf-8-sig")
@@ -86,7 +88,9 @@ def mock_get_gnn_risk_score(request: LearningPlanningRequest) -> float:
     elif stress_level == "high":
         risk_score += 0.28
 
-    return round(min(risk_score, 0.95), 2)
+    local_fallback = round(min(risk_score, 0.95), 2)
+    fedgnn_score = get_fedgnn_risk_score_for_session(request.session_id, fallback=local_fallback)
+    return round(max(local_fallback, fedgnn_score), 2)
 
 
 def mock_abac_authorize(

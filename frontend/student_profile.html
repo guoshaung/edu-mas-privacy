@@ -4,57 +4,322 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>学生页面</title>
+  <script src="./auth.js" data-required-role="student"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;800&display=swap" rel="stylesheet">
   <style>
-    :root { --bg:#f6f8fb; --panel:#fff; --line:#dbe3ee; --text:#243447; --muted:#6b7c93; --primary:#2f80ed; --soft:#eef4ff; --shadow:0 12px 32px rgba(36,52,71,.08); --success:#166534; }
-    * { box-sizing:border-box; }
-    body { margin:0; background:var(--bg); color:var(--text); font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; }
-    .shell { width:min(1180px, calc(100% - 28px)); margin:0 auto; padding:24px 0 40px; }
-    .menu-bar,.card,.hero { background:var(--panel); border:1px solid var(--line); border-radius:20px; box-shadow:var(--shadow); }
-    .menu-bar { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:14px 18px; margin-bottom:20px; }
-    .menu-links { display:flex; gap:10px; flex-wrap:wrap; }
-    .menu-link { display:inline-flex; align-items:center; padding:10px 14px; border-radius:999px; text-decoration:none; font-weight:700; color:var(--primary); background:var(--soft); }
-    .menu-link.active { background:#243447; color:#fff; }
-    .hero { padding:24px; margin-bottom:20px; }
-    .hero h1 { margin:0 0 10px; }
-    .muted { color:var(--muted); line-height:1.8; }
-    .grid { display:grid; grid-template-columns: 360px 1fr; gap:18px; }
-    .card { padding:22px; }
-    .avatar-wrap { display:grid; place-items:center; gap:12px; }
-    .avatar { width:136px; height:136px; border-radius:50%; object-fit:cover; border:4px solid #eef4ff; background:#eef4ff; }
-    .field { display:grid; gap:8px; margin-top:14px; }
-    .field label { font-weight:700; color:#425466; }
-    .field input, .field textarea { width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:12px; font:inherit; background:#fff; }
-    .field textarea { min-height:88px; resize:vertical; }
-    .btn-row { display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; }
-    .btn { display:inline-flex; align-items:center; justify-content:center; border:none; border-radius:12px; padding:10px 14px; background:var(--primary); color:#fff; font-weight:700; cursor:pointer; }
-    .btn.secondary { background:#eef4ff; color:#244e7a; border:1px solid #d8e3f2; }
-    .pill { display:inline-flex; padding:6px 10px; border-radius:999px; background:#f0fdf4; color:var(--success); font-weight:700; font-size:.88rem; margin-right:8px; margin-bottom:8px; }
-    .knowledge-map { width:100%; border:1px solid var(--line); border-radius:18px; background:linear-gradient(180deg,#fcfdff 0%,#f7fbff 100%); padding:18px; }
-    .knowledge-map svg { width:100%; height:auto; }
-    .stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-top:14px; }
-    .stat { border:1px solid var(--line); border-radius:14px; padding:14px; background:#fcfcfd; }
-    .stat strong { display:block; margin-bottom:8px; }
-    @media (max-width: 980px) { .grid,.stats{grid-template-columns:1fr;} }
+    :root {
+      --bg: #f5f8fc;
+      --panel: #ffffff;
+      --line: #dde7f3;
+      --text: #1f2a44;
+      --muted: #6f809f;
+      --primary: #2f80ed;
+      --primary-soft: #edf5ff;
+      --accent: #17a673;
+      --accent-soft: #edfdf7;
+      --shadow: 0 18px 48px rgba(35, 57, 93, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at top right, rgba(47, 128, 237, 0.08), transparent 24%),
+        linear-gradient(180deg, #f7faff 0%, #f5f8fc 100%);
+      color: var(--text);
+      font-family: "Noto Sans SC", sans-serif;
+    }
+    .shell {
+      width: min(1360px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 22px 0 36px;
+    }
+    .menu-bar,
+    .hero,
+    .panel,
+    .stat-card,
+    .knowledge-panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+    }
+    .menu-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 18px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+    .menu-links {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .menu-link {
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 14px;
+      border-radius: 999px;
+      text-decoration: none;
+      font-weight: 700;
+      color: var(--primary);
+      background: var(--primary-soft);
+    }
+    .menu-link.active {
+      background: #1f2a44;
+      color: #fff;
+    }
+    .menu-tip {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #f6f8fc;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .hero {
+      padding: 26px;
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-size: 0.86rem;
+      font-weight: 800;
+    }
+    .hero h1 {
+      margin: 12px 0 0;
+      font-size: clamp(2rem, 4vw, 3rem);
+      line-height: 1.08;
+    }
+    .muted {
+      color: var(--muted);
+      line-height: 1.8;
+    }
+    .hero p {
+      margin: 14px 0 0;
+    }
+    .hero-summary {
+      display: grid;
+      gap: 12px;
+    }
+    .stat-card {
+      padding: 16px;
+      background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+    }
+    .stat-card strong {
+      display: block;
+      margin-bottom: 8px;
+    }
+    .stat-value {
+      display: block;
+      color: var(--primary);
+      font-size: 1.18rem;
+      font-weight: 800;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 360px minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+    .panel {
+      padding: 22px;
+    }
+    .panel h2 {
+      margin: 0 0 12px;
+    }
+    .avatar-wrap {
+      display: grid;
+      justify-items: center;
+      gap: 14px;
+      padding-bottom: 12px;
+    }
+    .avatar {
+      width: 144px;
+      height: 144px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 5px solid #edf5ff;
+      background: #edf5ff;
+    }
+    .field {
+      display: grid;
+      gap: 8px;
+      margin-top: 14px;
+    }
+    .field label {
+      font-weight: 700;
+      color: #35557f;
+    }
+    .field input,
+    .field textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      font: inherit;
+      background: #fff;
+    }
+    .field textarea {
+      min-height: 104px;
+      resize: vertical;
+    }
+    .btn-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      border-radius: 16px;
+      padding: 12px 16px;
+      background: var(--primary);
+      color: #fff;
+      font-weight: 800;
+      cursor: pointer;
+      text-decoration: none;
+    }
+    .btn.secondary {
+      background: var(--primary-soft);
+      color: var(--primary);
+      border: 1px solid #d8e8ff;
+    }
+    .content-stack {
+      display: grid;
+      gap: 18px;
+    }
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .quick-item {
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: #fbfdff;
+    }
+    .quick-item strong {
+      display: block;
+      margin-bottom: 8px;
+    }
+    .knowledge-panel {
+      padding: 18px;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    }
+    .knowledge-panel svg {
+      width: 100%;
+      height: auto;
+      display: block;
+    }
+    .tag-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 14px;
+    }
+    .tag-row span {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #f4f8fe;
+      color: #35557f;
+      font-size: 0.84rem;
+      font-weight: 700;
+    }
+    .service-links {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .service-link {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      text-decoration: none;
+      color: #274165;
+      background: #f8fbff;
+      border: 1px solid var(--line);
+      font-weight: 700;
+    }
+    @media (max-width: 1120px) {
+      .hero,
+      .layout,
+      .quick-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+    @media (max-width: 720px) {
+      .shell {
+        width: min(100% - 18px, 100%);
+      }
+      .quick-grid {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="shell">
     <nav class="menu-bar">
       <div class="menu-links">
-        <a class="menu-link" href="student_hub.html">功能页面</a>
+        <a class="menu-link" href="student_hub.html">主页</a>
         <a class="menu-link active" href="student_profile.html">学生页面</a>
+        <a class="menu-link" href="srpg_demo.html">SRPG 双流演示页</a>
+        <a class="menu-link" href="algorithm_showcase.html">算法展示</a>
         <a class="menu-link" href="privacy_lab.html">隐私测试页</a>
       </div>
-      <div class="muted">学生个人信息与知识图谱展示</div>
+      <div class="menu-tip">本地画像与学生档案</div>
     </nav>
 
     <section class="hero">
-      <h1>学生页面</h1>
-      <div class="muted">这里用于演示学生的个人信息、本地头像修改和知识图谱展示。所有修改仅保存在当前浏览器本地。</div>
+      <div>
+        <span class="eyebrow">本地学生画像</span>
+        <h1>把个人资料、学习标签和知识图谱放在同一页里查看。</h1>
+        <p class="muted" id="heroText">这里主要用于展示学生基本信息、本地头像、掌握度摘要和知识图谱。所有修改默认只保存在当前浏览器本地。</p>
+      </div>
+      <div class="hero-summary">
+        <article class="stat-card">
+          <strong>当前学习主题</strong>
+          <span class="stat-value" id="topicValue">矩阵乘法</span>
+          <div class="muted">你最近的辅导与检验会围绕这个主题展开。</div>
+        </article>
+        <article class="stat-card">
+          <strong>最近掌握度</strong>
+          <span class="stat-value" id="masteryValue">pending</span>
+          <div class="muted">完成知识检验后会自动同步到这里。</div>
+        </article>
+        <article class="stat-card">
+          <strong>画像状态</strong>
+          <span class="stat-value" id="personaValue">待补充</span>
+          <div class="muted">完成个性诊断后，本地画像会变得更完整。</div>
+        </article>
+      </div>
     </section>
 
-    <section class="grid">
-      <article class="card">
+    <div class="layout">
+      <section class="panel">
+        <h2>个人信息</h2>
         <div class="avatar-wrap">
           <img id="avatarPreview" class="avatar" alt="student avatar" src="https://api.dicebear.com/9.x/thumbs/svg?seed=zhangsan" />
           <input id="avatarInput" type="file" accept="image/*" />
@@ -74,83 +339,114 @@
         </div>
         <div class="field">
           <label for="studentBio">学习简介</label>
-          <textarea id="studentBio">偏好图示化讲解，数学与信息技术学习积极，容易在计算细节处出现粗心错误。</textarea>
+          <textarea id="studentBio">偏好图示化讲解，数学和信息技术学习积极，容易在计算细节处出现粗心错误。</textarea>
         </div>
 
         <div class="btn-row">
-          <button class="btn" id="saveProfileBtn" type="button">保存信息</button>
+          <button class="btn" id="saveProfileBtn" type="button">保存本地资料</button>
           <button class="btn secondary" id="resetAvatarBtn" type="button">恢复默认头像</button>
         </div>
-      </article>
+      </section>
 
-      <article class="card">
-        <h2 style="margin-top:0;">学生知识图谱</h2>
-        <div>
-          <span class="pill">矩阵乘法</span>
-          <span class="pill">维度判断</span>
-          <span class="pill">过程检验</span>
-          <span class="pill">迁移应用</span>
-        </div>
-        <div class="knowledge-map" style="margin-top:14px;">
-          <svg viewBox="0 0 760 420" xmlns="http://www.w3.org/2000/svg">
+      <section class="content-stack">
+        <article class="panel">
+          <h2>学习概览</h2>
+          <div class="quick-grid">
+            <div class="quick-item">
+              <strong>当前优势</strong>
+              <div class="muted" id="strengthText">图示理解能力较强，适合通过结构图和分步讲解吸收知识。</div>
+            </div>
+            <div class="quick-item">
+              <strong>当前薄弱点</strong>
+              <div class="muted" id="weaknessText">需要重点注意维度判断、计算细节与过程检查。</div>
+            </div>
+            <div class="quick-item">
+              <strong>推荐节奏</strong>
+              <div class="muted">每次 15 到 20 分钟，先学后练，练后立即做一次简短复盘。</div>
+            </div>
+          </div>
+          <div class="tag-row" id="tagRow">
+            <span>矩阵乘法</span>
+            <span>图示理解</span>
+            <span>维度判断</span>
+            <span>过程检查</span>
+          </div>
+        </article>
+
+        <article class="knowledge-panel">
+          <h2 style="margin-top:0;">学生知识图谱</h2>
+          <p class="muted">用一个轻量知识图谱展示当前主题、先修知识、优势点和薄弱点，方便答辩时直观看到学生画像。</p>
+          <svg viewBox="0 0 860 420" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <linearGradient id="nodeFill" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stop-color="#eff6ff" />
+              <linearGradient id="nodeBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#edf5ff" />
                 <stop offset="100%" stop-color="#dbeafe" />
               </linearGradient>
+              <linearGradient id="nodeGreen" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ecfdf3" />
+                <stop offset="100%" stop-color="#d1fae5" />
+              </linearGradient>
+              <linearGradient id="nodeOrange" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#fff7eb" />
+                <stop offset="100%" stop-color="#fde7c2" />
+              </linearGradient>
             </defs>
-            <line x1="160" y1="90" x2="360" y2="90" stroke="#94a3b8" stroke-width="3" />
-            <line x1="360" y1="90" x2="560" y2="90" stroke="#94a3b8" stroke-width="3" />
-            <line x1="360" y1="90" x2="250" y2="260" stroke="#94a3b8" stroke-width="3" />
-            <line x1="360" y1="90" x2="470" y2="260" stroke="#94a3b8" stroke-width="3" />
+            <line x1="190" y1="120" x2="410" y2="120" stroke="#98a7c1" stroke-width="4" />
+            <line x1="410" y1="120" x2="645" y2="120" stroke="#98a7c1" stroke-width="4" />
+            <line x1="410" y1="120" x2="300" y2="290" stroke="#98a7c1" stroke-width="4" />
+            <line x1="410" y1="120" x2="535" y2="290" stroke="#98a7c1" stroke-width="4" />
+
             <g>
-              <circle cx="160" cy="90" r="54" fill="url(#nodeFill)" stroke="#2563eb" stroke-width="4" />
-              <text x="160" y="84" text-anchor="middle" font-size="24" fill="#1e3a8a">先修基础</text>
-              <text x="160" y="112" text-anchor="middle" font-size="18" fill="#475569">矩阵表示</text>
+              <circle cx="190" cy="120" r="62" fill="url(#nodeBlue)" stroke="#2f80ed" stroke-width="4" />
+              <text x="190" y="112" text-anchor="middle" font-size="25" fill="#1e3a8a">先修基础</text>
+              <text x="190" y="142" text-anchor="middle" font-size="18" fill="#475569">矩阵表示</text>
             </g>
+
             <g>
-              <circle cx="360" cy="90" r="60" fill="url(#nodeFill)" stroke="#2563eb" stroke-width="4" />
-              <text x="360" y="84" text-anchor="middle" font-size="24" fill="#1e3a8a">核心知识</text>
-              <text x="360" y="112" text-anchor="middle" font-size="18" fill="#475569">矩阵乘法</text>
+              <circle cx="410" cy="120" r="70" fill="url(#nodeBlue)" stroke="#2f80ed" stroke-width="4" />
+              <text x="410" y="112" text-anchor="middle" font-size="28" fill="#1e3a8a">当前主题</text>
+              <text x="410" y="145" text-anchor="middle" font-size="20" fill="#475569">矩阵乘法</text>
             </g>
+
             <g>
-              <circle cx="560" cy="90" r="54" fill="url(#nodeFill)" stroke="#2563eb" stroke-width="4" />
-              <text x="560" y="84" text-anchor="middle" font-size="24" fill="#1e3a8a">拓展应用</text>
-              <text x="560" y="112" text-anchor="middle" font-size="18" fill="#475569">综合问题</text>
+              <circle cx="645" cy="120" r="62" fill="url(#nodeBlue)" stroke="#2f80ed" stroke-width="4" />
+              <text x="645" y="112" text-anchor="middle" font-size="25" fill="#1e3a8a">拓展应用</text>
+              <text x="645" y="142" text-anchor="middle" font-size="18" fill="#475569">综合问题</text>
             </g>
+
             <g>
-              <circle cx="250" cy="260" r="50" fill="#fef3c7" stroke="#f59e0b" stroke-width="4" />
-              <text x="250" y="254" text-anchor="middle" font-size="22" fill="#92400e">薄弱点</text>
-              <text x="250" y="282" text-anchor="middle" font-size="17" fill="#78350f">维度判断</text>
+              <circle cx="300" cy="290" r="56" fill="url(#nodeOrange)" stroke="#f59e0b" stroke-width="4" />
+              <text x="300" y="282" text-anchor="middle" font-size="24" fill="#92400e">薄弱点</text>
+              <text x="300" y="312" text-anchor="middle" font-size="18" fill="#7c2d12">维度判断</text>
             </g>
+
             <g>
-              <circle cx="470" cy="260" r="50" fill="#dcfce7" stroke="#22c55e" stroke-width="4" />
-              <text x="470" y="254" text-anchor="middle" font-size="22" fill="#166534">优势点</text>
-              <text x="470" y="282" text-anchor="middle" font-size="17" fill="#166534">图示理解</text>
+              <circle cx="535" cy="290" r="56" fill="url(#nodeGreen)" stroke="#17a673" stroke-width="4" />
+              <text x="535" y="282" text-anchor="middle" font-size="24" fill="#166534">优势点</text>
+              <text x="535" y="312" text-anchor="middle" font-size="18" fill="#166534">图示理解</text>
             </g>
           </svg>
-        </div>
+        </article>
 
-        <div class="stats">
-          <div class="stat">
-            <strong>当前主攻模块</strong>
-            <span>矩阵乘法</span>
+        <article class="panel">
+          <h2>常用学生入口</h2>
+          <p class="muted">这里保留几个跟学生个人档案强相关的快捷入口，便于从画像页直接跳转。</p>
+          <div class="service-links">
+            <a class="service-link" href="student_diagnosis.html"><span>回到个性诊断</span><span>→</span></a>
+            <a class="service-link" href="student_planning.html"><span>查看学习规划</span><span>→</span></a>
+            <a class="service-link" href="student_tutoring.html"><span>进入自适应辅导</span><span>→</span></a>
           </div>
-          <div class="stat">
-            <strong>最近掌握度</strong>
-            <span id="masteryStat">pending</span>
-          </div>
-          <div class="stat">
-            <strong>推荐节奏</strong>
-            <span>15-20 分钟/段</span>
-          </div>
-        </div>
-      </article>
-    </section>
+        </article>
+      </section>
+    </div>
   </div>
 
   <script>
     const STORAGE_KEY = "eduMasStudentProfilePage";
+    const DIAGNOSIS_KEY = "eduMasDiagnosisResult";
+    const PLANNING_KEY = "eduMasPlanningResult";
+    const RESULT_KEY = "eduMasAssessmentResult";
+
     const avatarPreview = document.getElementById("avatarPreview");
     const avatarInput = document.getElementById("avatarInput");
     const saveProfileBtn = document.getElementById("saveProfileBtn");
@@ -162,24 +458,13 @@
       studentBio: document.getElementById("studentBio")
     };
 
-    try {
-      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-      if (saved) {
-        Object.keys(fields).forEach((key) => {
-          if (saved[key]) fields[key].value = saved[key];
-        });
-        if (saved.avatarDataUrl) {
-          avatarPreview.src = saved.avatarDataUrl;
-        }
-      }
-    } catch (e) {}
+    const diagnosisResult = readJson(DIAGNOSIS_KEY);
+    const planningResult = readJson(PLANNING_KEY);
+    const assessmentResult = readJson(RESULT_KEY);
+    const storedProfile = readJson(STORAGE_KEY);
+    const sessionProfile = readSessionJson("eduMasProfile");
 
-    try {
-      const assessment = JSON.parse(localStorage.getItem("eduMasAssessmentResult") || "null");
-      if (assessment) {
-        document.getElementById("masteryStat").textContent = assessment.mastery_level || "pending";
-      }
-    } catch (e) {}
+    hydratePage();
 
     avatarInput.addEventListener("change", (event) => {
       const file = event.target.files && event.target.files[0];
@@ -200,12 +485,74 @@
         avatarDataUrl: avatarPreview.src
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
-      alert("学生信息已保存到本地浏览器。");
+      alert("学生资料已保存到当前浏览器本地。");
     });
 
     resetAvatarBtn.addEventListener("click", () => {
       avatarPreview.src = "https://api.dicebear.com/9.x/thumbs/svg?seed=zhangsan";
     });
+
+    function hydratePage() {
+      if (storedProfile) {
+        Object.keys(fields).forEach((key) => {
+          if (storedProfile[key]) fields[key].value = storedProfile[key];
+        });
+        if (storedProfile.avatarDataUrl) avatarPreview.src = storedProfile.avatarDataUrl;
+      }
+
+      if (sessionProfile && sessionProfile.displayName) {
+        document.getElementById("heroText").textContent = `${sessionProfile.displayName}，这里是你的本地画像页。头像、资料和学习标签默认只保存在当前浏览器。`;
+      }
+
+      if (assessmentResult) {
+        document.getElementById("masteryValue").textContent = assessmentResult.mastery_level || "pending";
+      }
+
+      if (planningResult && Array.isArray(planningResult.planning_path) && planningResult.planning_path.length) {
+        document.getElementById("topicValue").textContent = planningResult.current_topic || planningResult.planning_path[0].stage || "已生成规划";
+      }
+
+      if (diagnosisResult) {
+        const styleTags = [];
+        if (diagnosisResult.learningStyleTag) styleTags.push(diagnosisResult.learningStyleTag);
+        if (diagnosisResult.personalityTag) styleTags.push(diagnosisResult.personalityTag);
+        document.getElementById("personaValue").textContent = styleTags.length ? styleTags.join(" / ") : "本地画像已生成";
+
+        if (Array.isArray(diagnosisResult.report?.strengths) && diagnosisResult.report.strengths.length) {
+          document.getElementById("strengthText").textContent = diagnosisResult.report.strengths.join("；");
+        }
+        if (Array.isArray(diagnosisResult.report?.supportStrategies) && diagnosisResult.report.supportStrategies.length) {
+          document.getElementById("weaknessText").textContent = diagnosisResult.report.supportStrategies[0];
+        }
+
+        const tagRow = document.getElementById("tagRow");
+        const dynamicTags = []
+          .concat(diagnosisResult.focusSubjects || [])
+          .concat(diagnosisResult.weaknessSubjects || [])
+          .slice(0, 5);
+        if (dynamicTags.length) {
+          tagRow.innerHTML = dynamicTags.map((item) => `<span>${item}</span>`).join("");
+        }
+      }
+    }
+
+    function readJson(key) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : null;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function readSessionJson(key) {
+      try {
+        const raw = sessionStorage.getItem(key);
+        return raw ? JSON.parse(raw) : null;
+      } catch (error) {
+        return null;
+      }
+    }
   </script>
 </body>
 </html>

@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SRPG 双流演示页</title>
+  <script src="./auth.js" data-required-role="student"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f5f8fc;
+      --panel: #ffffff;
+      --line: #dde7f3;
+      --text: #1f2a44;
+      --muted: #6f809f;
+      --primary: #2f80ed;
+      --primary-soft: #edf5ff;
+      --accent: #17a673;
+      --accent-soft: #edfdf7;
+      --warn: #b46916;
+      --warn-soft: #fff7eb;
+      --violet-soft: #f4f1ff;
+      --violet: #6d49c6;
+      --shadow: 0 18px 48px rgba(35, 57, 93, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at top right, rgba(47, 128, 237, 0.08), transparent 24%),
+        linear-gradient(180deg, #f7faff 0%, #f5f8fc 100%);
+      color: var(--text);
+      font-family: "Noto Sans SC", sans-serif;
+    }
+    .shell {
+      width: min(1360px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 22px 0 36px;
+    }
+    .menu-bar, .hero, .section-card, .flow-card, .json-card, .metric-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+    }
+    .menu-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 18px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+    .menu-links {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .menu-link {
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 14px;
+      border-radius: 999px;
+      text-decoration: none;
+      font-weight: 700;
+      color: var(--primary);
+      background: var(--primary-soft);
+    }
+    .menu-link.active {
+      background: #1f2a44;
+      color: #fff;
+    }
+    .menu-tip {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #f6f8fc;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-size: 0.86rem;
+      font-weight: 800;
+    }
+    .hero {
+      padding: 26px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.08fr) minmax(340px, 0.92fr);
+      gap: 18px;
+      margin-bottom: 18px;
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at top left, rgba(47, 128, 237, 0.12), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(23, 166, 115, 0.10), transparent 20%),
+        linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+    }
+    .hero h1 {
+      margin: 12px 0 0;
+      font-size: clamp(1.9rem, 3vw, 2.7rem);
+      line-height: 1.14;
+      max-width: 12ch;
+    }
+    .muted { color: var(--muted); line-height: 1.8; }
+    .hero p { margin: 14px 0 0; }
+    .arrow-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--primary);
+      font-weight: 800;
+      margin: 10px 0 4px;
+      flex-wrap: wrap;
+    }
+    .demo-form {
+      display: grid;
+      gap: 14px;
+      margin-top: 18px;
+    }
+    .demo-form label {
+      display: grid;
+      gap: 8px;
+      font-weight: 700;
+      color: #36537d;
+    }
+    .demo-form textarea {
+      width: 100%;
+      min-height: 148px;
+      padding: 14px 16px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--text);
+      font: inherit;
+      resize: vertical;
+      line-height: 1.8;
+    }
+    .demo-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .demo-status {
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.7;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 18px;
+      border-radius: 16px;
+      border: none;
+      cursor: pointer;
+      font-weight: 800;
+      font: inherit;
+      text-decoration: none;
+    }
+    .btn.primary {
+      background: linear-gradient(135deg, #2f80ed 0%, #5daaf7 100%);
+      color: #fff;
+    }
+    .btn.secondary {
+      background: var(--primary-soft);
+      color: var(--primary);
+      border: 1px solid #d8e8ff;
+    }
+    .hero-metrics {
+      display: grid;
+      gap: 12px;
+    }
+    .metric-card {
+      padding: 16px;
+      background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+    }
+    .metric-card strong {
+      display: block;
+      margin-bottom: 8px;
+    }
+    .metric-value {
+      display: block;
+      font-size: 1.16rem;
+      color: var(--primary);
+      font-weight: 800;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+      align-items: start;
+    }
+    .section-card {
+      padding: 22px;
+    }
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .section-head h2 {
+      margin: 0;
+    }
+    .flow-list, .json-grid {
+      display: grid;
+      gap: 12px;
+    }
+    .flow-list {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .json-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .flow-card, .json-card {
+      padding: 16px;
+      background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+    }
+    .flow-card strong, .json-card strong {
+      display: block;
+      margin-bottom: 10px;
+    }
+    .flow-meta {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .flow-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+    .flow-tag.private { background: var(--warn-soft); color: var(--warn); }
+    .flow-tag.logic { background: var(--primary-soft); color: var(--primary); }
+    .flow-tag.safe { background: var(--accent-soft); color: var(--accent); }
+    .flow-tag.gate { background: var(--violet-soft); color: var(--violet); }
+    pre {
+      margin: 0;
+      padding: 14px;
+      border-radius: 18px;
+      background: #f8fbff;
+      border: 1px solid var(--line);
+      overflow: auto;
+      min-height: 132px;
+      max-height: 260px;
+      color: #31425f;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.6;
+      font-family: Consolas, "SFMono-Regular", monospace;
+      font-size: 0.92rem;
+    }
+    .json-card.empty pre {
+      display: grid;
+      place-items: center;
+      color: var(--muted);
+      font-family: "Noto Sans SC", sans-serif;
+      font-size: 0.95rem;
+    }
+    .legend-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .agent-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .agent-card {
+      padding: 18px;
+      border-radius: 20px;
+      border: 1px solid var(--line);
+      background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+    }
+    .agent-card strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 1.02rem;
+    }
+    .agent-card p {
+      margin: 0 0 10px;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+    .agent-tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .agent-tags span {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #f4f8fe;
+      color: #35557f;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+    .legend-item {
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: #fbfdff;
+    }
+    .legend-item strong {
+      display: block;
+      margin-bottom: 8px;
+    }
+    @media (max-width: 1100px) {
+      .hero, .layout, .legend-grid, .agent-grid {
+        grid-template-columns: 1fr;
+      }
+      .flow-list,
+      .json-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <nav class="menu-bar">
+      <div class="menu-links">
+        <a class="menu-link" href="student_hub.html">主页</a>
+        <a class="menu-link" href="student_profile.html">学生页面</a>
+        <a class="menu-link active" href="srpg_demo.html">SRPG 双流演示页</a>
+        <a class="menu-link" href="algorithm_showcase.html">算法展示</a>
+        <a class="menu-link" href="privacy_lab.html">隐私测试页</a>
+      </div>
+      <div class="menu-tip">隐私治理核心流程可视化</div>
+    </nav>
+
+    <section class="hero">
+      <div>
+        <span class="eyebrow">SRPG 双流融合机制</span>
+        <h1>把学生原始输入拆成“去敏流”和“逻辑流”，再受控地送进云端多智能体。</h1>
+        <p class="muted" id="heroIntro">这个页面专门用来展示 SRPG 在当前项目里是怎么工作的：什么信息留在本地，什么信息会做差分隐私处理，什么信息会进入 AG2、AG3、AG4、AG5。</p>
+        <div class="arrow-line">学生原始输入 → 本地隐私网关 → 去敏流 / 逻辑流 → 差分隐私 → ABAC → 云端智能体</div>
+        <div class="demo-form">
+          <label for="questionInput">
+            现场演示输入
+            <textarea id="questionInput">我最近一做线性代数里和秩有关的题就会紧张，尤其碰到矩阵乘积时总觉得思路断掉。比如老师讲到“为什么 rank(AB)≤min(rank(A),rank(B))”，我能记住结论，但不知道这个不等式为什么自然成立。还有，什么情况下 rank(AB)=rank(A)成立？能不能先用图示和直观解释带我过一遍，再给我一题简单点的练习？</textarea>
+          </label>
+          <div class="demo-actions">
+            <button class="btn primary" id="runDemoBtn" type="button">重新生成双流拆分</button>
+            <button class="btn secondary" id="resetDemoBtn" type="button">恢复默认问题</button>
+          </div>
+          <div class="demo-status" id="demoStatus">请先点击“重新生成双流拆分”，页面会根据当前输入生成去敏流、差分隐私后的去敏流、逻辑流和最终载荷。</div>
+        </div>
+      </div>
+
+      <div class="hero-metrics">
+        <article class="metric-card">
+          <strong>隐私保护对象</strong>
+          <span class="metric-value">身份 / 心理 / 行为 / 画像</span>
+          <div class="muted">这些字段会先在本地被识别、降粒度，再决定是否进入去敏流。</div>
+        </article>
+        <article class="metric-card">
+          <strong>可见主体</strong>
+          <span class="metric-value">AG2 · AG3 · AG4 · AG5</span>
+          <div class="muted">不同 Agent 只读取完成当前任务所需的最小必要信息。</div>
+        </article>
+        <article class="metric-card">
+          <strong>当前演示模式</strong>
+          <span class="metric-value">页面级流程展示</span>
+          <div class="muted">这里重点演示 SRPG 的字段拆分、差分隐私处理和信息流向，不展示虚构评分。</div>
+        </article>
+      </div>
+    </section>
+
+    <div class="layout">
+      <section class="section-card">
+        <div class="section-head">
+          <div>
+            <h2>整个流程的信息流动</h2>
+            <div class="muted">把 SRPG 拆分前后、本地处理、网关控制和云端流转过程放在一条线上展示出来。</div>
+          </div>
+          <span class="eyebrow">流程视图</span>
+        </div>
+        <div class="flow-list" id="flowList"></div>
+      </section>
+
+      <section class="section-card">
+        <div class="section-head">
+          <div>
+            <h2>字段拆分结果</h2>
+            <div class="muted">这里会同时展示原始输入、去敏流、差分隐私后的去敏流、逻辑流和最终上传载荷。</div>
+          </div>
+          <span class="eyebrow">结构化视图</span>
+        </div>
+        <div class="json-grid">
+          <article class="json-card">
+            <strong>原始学生输入</strong>
+            <pre id="rawInputBox"></pre>
+          </article>
+          <article class="json-card">
+            <strong>去敏流（隐私流）</strong>
+            <pre id="privateStreamBox"></pre>
+          </article>
+          <article class="json-card">
+            <strong>差分隐私后的去敏流</strong>
+            <pre id="dpPrivateStreamBox"></pre>
+          </article>
+          <article class="json-card">
+            <strong>逻辑流（教学流）</strong>
+            <pre id="logicStreamBox"></pre>
+          </article>
+          <article class="json-card">
+            <strong>发送到云端的最小载荷</strong>
+            <pre id="payloadBox"></pre>
+          </article>
+        </div>
+      </section>
+    </div>
+
+    <section class="section-card" style="margin-top:18px;">
+      <div class="section-head">
+        <div>
+          <h2>AG2 / AG3 / AG4 / AG5 分别读取什么</h2>
+          <div class="muted">这组卡片专门解释双流拆分后，不同智能体为什么读到的是不同粒度的信息。</div>
+        </div>
+        <span class="eyebrow">智能体读取范围</span>
+      </div>
+      <div class="agent-grid" id="agentGrid"></div>
+    </section>
+
+    <section class="section-card" style="margin-top:18px;">
+      <div class="section-head">
+        <div>
+          <h2>保护对象、权限等级与主体</h2>
+          <div class="muted">把隐私保护对象、信息主体和权限控制放在同一页，方便汇报时直接讲。</div>
+        </div>
+        <span class="eyebrow">治理说明</span>
+      </div>
+      <div class="legend-grid">
+        <div class="legend-item">
+          <strong>受到保护的隐私数据</strong>
+          <div class="muted">学生身份、心理状态、行为模式、知识图谱细节、长期画像特征。</div>
+        </div>
+        <div class="legend-item">
+          <strong>信息主体</strong>
+          <div class="muted">学生本地 A1、隐私网关、AG2 诊断、AG3 规划/辅导、AG4 内容搜集、AG5 知识检验。</div>
+        </div>
+        <div class="legend-item">
+          <strong>权限等级</strong>
+          <div class="muted">本地原始可见、脱敏后可见、摘要可见、阶段受限可见、完全阻断。</div>
+        </div>
+        <div class="legend-item">
+          <strong>核心控制点</strong>
+          <div class="muted">SRPG 双流拆分、差分隐私扰动、ABAC 细粒度放行、FedGNN 风险评估。</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const DEFAULT_QUESTION = `我最近一做线性代数里和秩有关的题就会紧张，尤其碰到矩阵乘积时总觉得思路断掉。比如老师讲到“为什么 rank(AB)≤min(rank(A),rank(B))”，我能记住结论，但不知道这个不等式为什么自然成立。还有，什么情况下 rank(AB)=rank(A)成立？能不能先用图示和直观解释带我过一遍，再给我一题简单点的练习？`;
+
+    const diagnosisResult = readJson("eduMasDiagnosisResult");
+    const planningResult = readJson("eduMasPlanningResult");
+    const profile = readSessionJson("eduMasProfile");
+    const questionInput = document.getElementById("questionInput");
+    const runDemoBtn = document.getElementById("runDemoBtn");
+    const resetDemoBtn = document.getElementById("resetDemoBtn");
+    const demoStatus = document.getElementById("demoStatus");
+
+    runDemoBtn.addEventListener("click", renderAll);
+    resetDemoBtn.addEventListener("click", () => {
+      questionInput.value = DEFAULT_QUESTION;
+      renderAll();
+    });
+
+    renderEmptyState();
+
+    function renderAll() {
+      const rawInput = buildRawInput(questionInput.value.trim() || DEFAULT_QUESTION);
+      const privateStream = buildPrivateStream(rawInput);
+      const dpPrivateStream = buildDpPrivateStream(privateStream);
+      const logicStream = buildLogicStream(rawInput);
+      const payload = buildPayload(dpPrivateStream, logicStream);
+
+      renderHero();
+      renderFlow(logicStream);
+      renderAgentCards();
+      renderJson("rawInputBox", rawInput);
+      renderJson("privateStreamBox", privateStream);
+      renderJson("dpPrivateStreamBox", dpPrivateStream);
+      renderJson("logicStreamBox", logicStream);
+      renderJson("payloadBox", payload);
+      demoStatus.textContent = `已根据当前输入完成双流拆分，逻辑主题识别为“${logicStream.logic_topic}”，时间：${new Date().toLocaleTimeString("zh-CN", { hour12: false })}`;
+    }
+
+    function renderEmptyState() {
+      renderHero();
+      renderFlow(null);
+      renderAgentCards();
+      renderPlaceholder("rawInputBox", "点击上方按钮后，这里会展示原始学生输入。");
+      renderPlaceholder("privateStreamBox", "点击上方按钮后，这里会展示去敏流（隐私流）。");
+      renderPlaceholder("dpPrivateStreamBox", "点击上方按钮后，这里会展示差分隐私后的去敏流。");
+      renderPlaceholder("logicStreamBox", "点击上方按钮后，这里会展示逻辑流（教学流）。");
+      renderPlaceholder("payloadBox", "点击上方按钮后，这里会展示最终发送到云端的最小载荷。");
+    }
+
+    function renderHero() {
+      if (profile && profile.displayName) {
+        document.getElementById("heroIntro").textContent =
+          `${profile.displayName}，这页会把你的原始输入、SRPG 双流拆分结果、差分隐私后的载荷和云端 Agent 流转放在一起展示，方便直接说明整个隐私治理机制。`;
+      }
+    }
+
+    function renderFlow(logicStream) {
+      const currentTopicText = logicStream ? `系统提取当前问题的数学主题、知识点焦点和讲解目标，本轮逻辑主题识别为“${logicStream.logic_topic}”。` : "系统会在你点击按钮后识别当前问题的数学主题、知识点焦点和讲解目标。";
+      const steps = [
+        {
+          title: "A1 本地原始输入",
+          tags: [["private", "原始数据"], ["logic", "待拆分"]],
+          body: "学生输入的问题、情绪表达、求助方式和学习偏好先留在本地，不会直接原样送云端。"
+        },
+        {
+          title: "SRPG 去敏流",
+          tags: [["private", "本地降粒度"], ["safe", "个体特征摘要"]],
+          body: "身份、压力状态、行为模式、支持强度等先做桶化和摘要化，形成去敏流。"
+        },
+        {
+          title: "差分隐私处理",
+          tags: [["private", "LDP 扰动"], ["safe", "准备上送"]],
+          body: "去敏流中的桶化特征会进一步加噪或泛化，再作为云端可读取的敏感摘要。"
+        },
+        {
+          title: "SRPG 逻辑流",
+          tags: [["logic", "教学语义"], ["safe", "任务可用"]],
+          body: currentTopicText
+        },
+        {
+          title: "隐私网关与 ABAC",
+          tags: [["gate", "权限控制"], ["safe", "最小必要"]],
+          body: "根据阶段、主体和策略决定哪些字段可以上送，哪些字段只能留在本地。"
+        },
+        {
+          title: "云端多智能体执行",
+          tags: [["logic", "AG2/AG3/AG4/AG5"], ["safe", "最小载荷"]],
+          body: "AG2 读取脱敏后的画像摘要，AG3 读取逻辑流和必要的个体特征，AG4/AG5 只拿完成任务所需的最小信息。"
+        }
+      ];
+
+      document.getElementById("flowList").innerHTML = steps.map((step) => `
+        <article class="flow-card">
+          <strong>${step.title}</strong>
+          <div class="flow-meta">
+            ${step.tags.map(([kind, text]) => `<span class="flow-tag ${kind}">${text}</span>`).join("")}
+          </div>
+          <div class="muted">${step.body}</div>
+        </article>
+      `).join("");
+    }
+
+    function renderAgentCards() {
+      const cards = [
+        {
+          name: "AG2 诊断智能体",
+          desc: "主要读取差分隐私后的去敏画像摘要，用来判断学习风格和支持强度，不需要原始身份和完整心理表达。",
+          tags: ["DP 去敏流", "认知风格桶化", "压力等级桶化"]
+        },
+        {
+          name: "AG3 规划/辅导智能体",
+          desc: "以逻辑流为主，再辅以最少量的 DP 去敏特征，生成规划、讲解方式和分层辅导策略。",
+          tags: ["逻辑流", "问题摘要", "支持强度", "弱点标签"]
+        },
+        {
+          name: "AG4 内容搜集智能体",
+          desc: "只看逻辑流里的主题和知识点焦点，用来检索题库和讲义，不读取学生个体敏感信息。",
+          tags: ["逻辑主题", "语义焦点", "检索关键词"]
+        },
+        {
+          name: "AG5 知识检验智能体",
+          desc: "读取逻辑流和阶段结果摘要来出题与评估，只需要知道当前目标和薄弱知识点，不需要完整原始画像。",
+          tags: ["逻辑流", "阶段目标", "表现摘要"]
+        }
+      ];
+
+      document.getElementById("agentGrid").innerHTML = cards.map((card) => `
+        <article class="agent-card">
+          <strong>${card.name}</strong>
+          <p>${card.desc}</p>
+          <div class="agent-tags">
+            ${card.tags.map((tag) => `<span>${tag}</span>`).join("")}
+          </div>
+        </article>
+      `).join("");
+    }
+
+    function buildRawInput(questionText) {
+      return {
+        student_name: profile?.displayName || "张三",
+        current_topic: planningResult?.current_topic || "Linear Algebra",
+        raw_question: questionText,
+        raw_profile: {
+          cognitive_style: diagnosisResult?.learningStyleTag || "Visual_High",
+          stress_level: /紧张|焦虑|慌/.test(questionText) ? "Medium-High" : "Medium",
+          behavior_signature: {
+            message_frequency: "high",
+            active_hours: ["19:00-20:00", "21:00-22:00"]
+          },
+          weak_points: inferWeaknessTags(questionText)
+        }
+      };
+    }
+
+    function buildPrivateStream(raw) {
+      return {
+        identity_masked: "student_local_only",
+        cognitive_style_bucket: normalizeCognitiveStyle(raw.raw_profile.cognitive_style),
+        stress_level_bucket: normalizeStressLevel(raw.raw_profile.stress_level),
+        behavior_signature: {
+          message_frequency_bucket: "high",
+          active_hours_bucket: "evening"
+        },
+        support_intensity: inferSupportIntensity(raw.raw_question),
+        weak_points_masked: raw.raw_profile.weak_points
+      };
+    }
+
+    function buildDpPrivateStream(privateStream) {
+      const behaviorNoiseMap = {
+        low: "low (+0.08 noise)",
+        medium: "medium (+0.05 noise)",
+        high: "high (-0.04 noise)"
+      };
+      const stressNoiseMap = {
+        low: "low (+0.06 noise)",
+        medium: "medium (-0.03 noise)",
+        high: "high (+0.04 noise)"
+      };
+
+      return {
+        identity_masked: privateStream.identity_masked,
+        cognitive_style_bucket: `${privateStream.cognitive_style_bucket} (LDP sanitized)`,
+        stress_level_bucket: stressNoiseMap[privateStream.stress_level_bucket] || `${privateStream.stress_level_bucket} (LDP sanitized)`,
+        behavior_signature: {
+          message_frequency_bucket: behaviorNoiseMap[privateStream.behavior_signature.message_frequency_bucket] || `${privateStream.behavior_signature.message_frequency_bucket} (+noise)`,
+          active_hours_bucket: `${privateStream.behavior_signature.active_hours_bucket} (time window generalized)`
+        },
+        support_intensity: `${privateStream.support_intensity} (bucketed)`,
+        weak_points_masked: privateStream.weak_points_masked
+      };
+    }
+
+    function buildLogicStream(raw) {
+      return {
+        current_topic: raw.current_topic,
+        logic_topic: inferLogicTopic(raw.raw_question),
+        question_summary: summarizeQuestion(raw.raw_question),
+        learning_intent: inferLearningIntent(raw.raw_question),
+        tutoring_goal: inferTutoringGoal(raw.raw_question),
+        weakness_tags: raw.raw_profile.weak_points,
+        semantic_focus: inferSemanticFocus(raw.raw_question)
+      };
+    }
+
+    function buildPayload(privateData, logicData) {
+      return {
+        session_id: "srpg_demo_session",
+        request_type: "adaptive_tutoring",
+        payload: {
+          sanitized_features: {
+            cognitive_style: privateData.cognitive_style_bucket,
+            stress_level: privateData.stress_level_bucket,
+            support_intensity: privateData.support_intensity,
+            weakness_tags: logicData.weakness_tags
+          },
+          current_topic: logicData.current_topic,
+          logic_topic: logicData.logic_topic,
+          question_summary: logicData.question_summary,
+          semantic_focus: logicData.semantic_focus,
+          tutoring_goal: logicData.tutoring_goal
+        },
+        governance: {
+          abac_phase: "Tutoring",
+          srpg_mode: "dual_stream",
+          privacy_processing: "local_deidentification + local_differential_privacy"
+        }
+      };
+    }
+
+    function inferWeaknessTags(questionText) {
+      const tags = [];
+      if (/rank|秩/.test(questionText)) tags.push("秩的性质理解");
+      if (/AB|矩阵乘积|乘积/.test(questionText)) tags.push("矩阵乘积结构理解");
+      if (/≤|min|上界|不等式/.test(questionText)) tags.push("不等式推理");
+      if (/什么情况下|何时|成立条件|等于/.test(questionText)) tags.push("等号成立条件分析");
+      if (/图示|直观/.test(questionText)) tags.push("图示化讲解依赖");
+      return tags.length ? tags : ["知识点语义理解", "条件分析"];
+    }
+
+    function normalizeCognitiveStyle(style) {
+      if (/视|Visual/i.test(style)) return "visual";
+      if (/逻辑|Logic/i.test(style)) return "logic";
+      return "mixed";
+    }
+
+    function normalizeStressLevel(level) {
+      if (/High|高/.test(level)) return "high";
+      if (/Low|低/.test(level)) return "low";
+      return "medium";
+    }
+
+    function inferSupportIntensity(questionText) {
+      if (/图示|直观|一步步|带我/.test(questionText)) return "high";
+      if (/解释|练习/.test(questionText)) return "medium";
+      return "low";
+    }
+
+    function inferLogicTopic(questionText) {
+      if (/rank\(AB\)|秩|min/.test(questionText)) return "矩阵乘积秩与秩不等式";
+      if (/特征值|特征向量/.test(questionText)) return "特征值与特征向量";
+      if (/线性相关|线性无关/.test(questionText)) return "线性相关与向量组";
+      return "数学概念理解与条件推理";
+    }
+
+    function summarizeQuestion(questionText) {
+      return questionText.replace(/\s+/g, " ").trim().slice(0, 140);
+    }
+
+    function inferLearningIntent(questionText) {
+      if (/rank\(AB\)|秩/.test(questionText)) {
+        return "理解矩阵乘积秩上界的来源，并判断等号成立所需条件";
+      }
+      return "澄清概念定义、推理链条与结论成立条件";
+    }
+
+    function inferTutoringGoal(questionText) {
+      if (/rank\(AB\)|秩/.test(questionText)) {
+        return "从列空间映射、秩的基本性质和等号成立条件三个角度组织讲解";
+      }
+      return "先解释核心概念，再拆分证明思路，最后补充条件分析";
+    }
+
+    function inferSemanticFocus(questionText) {
+      if (/rank\(AB\)|秩/.test(questionText)) {
+        return [
+          "rank(AB)≤min(rank(A),rank(B))",
+          "矩阵乘积的列空间限制",
+          "rank(AB)=rank(A) 的成立条件"
+        ];
+      }
+      return [
+        "核心概念定义",
+        "推理链条拆分",
+        "结论成立条件"
+      ];
+    }
+
+    function renderJson(targetId, data) {
+      const card = document.getElementById(targetId).closest(".json-card");
+      if (card) card.classList.remove("empty");
+      document.getElementById(targetId).textContent = JSON.stringify(data, null, 2);
+    }
+
+    function renderPlaceholder(targetId, text) {
+      const card = document.getElementById(targetId).closest(".json-card");
+      if (card) card.classList.add("empty");
+      document.getElementById(targetId).textContent = text;
+    }
+
+    function readJson(key) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : null;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function readSessionJson(key) {
+      try {
+        const raw = sessionStorage.getItem(key);
+        return raw ? JSON.parse(raw) : null;
+      } catch (error) {
+        return null;
+      }
+    }
+  </script>
+</body>
+</html>

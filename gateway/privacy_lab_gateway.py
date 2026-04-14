@@ -10,15 +10,6 @@ router = APIRouter(prefix="/privacy", tags=["privacy-lab"])
 compat_router = APIRouter(tags=["privacy-lab-compat"])
 
 
-SUPPORTED_ATTACKS = {
-    "prompt_injection",
-    "identity_recovery",
-    "attribute_inference",
-    "membership_inference",
-    "linkage_attack",
-}
-
-
 class PrivacyAttackDemoRequest(BaseModel):
     attack_name: str = Field(..., min_length=1)
     raw_prompt: str = Field(..., min_length=1)
@@ -50,6 +41,44 @@ class PrivacyAttackDemoResponse(BaseModel):
     compare_panel: List[CompareItem]
     abac_timeline: List[LogEntry]
     user_notice: str
+
+
+ROLE_LEVELS = {
+    "student_basic": 1,
+    "student_verified": 2,
+    "teacher_basic": 3,
+    "teacher_curator": 4,
+    "system_agent": 5,
+    "system_high_trust_agent": 6,
+}
+
+
+RESOURCE_POLICY = {
+    "student_raw_profile": {
+        "classification": "P3",
+        "required_role": "system_high_trust_agent",
+        "allowed_phase": {"Diagnosis"},
+        "fallback": "summary_only",
+    },
+    "psychology_raw_answers": {
+        "classification": "P3",
+        "required_role": "system_high_trust_agent",
+        "allowed_phase": {"Diagnosis"},
+        "fallback": "masked",
+    },
+    "teacher_bank_fulltext": {
+        "classification": "C3",
+        "required_role": "teacher_curator",
+        "allowed_phase": {"Mining"},
+        "fallback": "substitute_generation",
+    },
+    "teacher_bank_summary": {
+        "classification": "C2",
+        "required_role": "teacher_basic",
+        "allowed_phase": {"Mining", "Tutoring"},
+        "fallback": "summary_only",
+    },
+}
 
 
 def _default_profile(request: PrivacyAttackDemoRequest) -> dict[str, Any]:
@@ -97,12 +126,7 @@ def _prompt_injection_response(request: PrivacyAttackDemoRequest) -> PrivacyAtta
         CompareItem(field="姓名", before=str(raw_profile.get("student_name", request.student_name)), after="匿名学生-A01", protection="身份匿名化处理"),
         CompareItem(field="学号", before=str(raw_profile.get("student_id", request.student_id)), after="已隐藏", protection="直接标识符屏蔽"),
         CompareItem(field="心理压力", before=str(raw_profile.get("stress_level", "Medium")), after="区间化风险: 中等", protection="敏感属性模糊化"),
-        CompareItem(
-            field="薄弱标签",
-            before=", ".join(raw_profile.get("weakness_tags", ["dimension_mismatch"])),
-            after="仅保留学习相关薄弱项",
-            protection="最小必要数据流转",
-        ),
+        CompareItem(field="薄弱标签", before=", ".join(raw_profile.get("weakness_tags", ["dimension_mismatch"])), after="仅保留学习相关薄弱项", protection="最小必要数据流转"),
     ]
     timeline = [
         LogEntry(step="攻击请求进入隐私网关", status="received", detail="系统检测到提示注入式请求，准备进入联合鉴权。"),
@@ -221,13 +245,46 @@ def _linkage_attack_response(request: PrivacyAttackDemoRequest) -> PrivacyAttack
     ]
     return _response(
         attack_name="linkage_attack",
-        risk_before=0.8,
+        risk_before=0.80,
         risk_after=0.23,
         before_view="攻击者试图把学生端页面记录、教师题库访问记录和多阶段日志拼接，重建完整身份轨迹。",
         after_view="系统对不同页面、不同阶段采用独立匿名标识，并仅返回阶段级摘要，无法完成跨域链接。",
         compare_panel=compare_panel,
         timeline=timeline,
         notice="系统会切断跨页面、跨阶段、跨域的稳定关联键，所以即使攻击者掌握多份日志，也难以把它们重新拼成你的完整轨迹。",
+    )
+
+
+def _privilege_escalation_response() -> PrivacyAttackDemoResponse:
+    subject_role = "student_basic"
+    target_resource = "teacher_bank_fulltext"
+    current_phase = "Tutoring"
+    policy = RESOURCE_POLICY[target_resource]
+    required_role = policy["required_role"]
+    fallback = policy["fallback"]
+
+    compare_panel = [
+        CompareItem(field="请求主体", before=subject_role, after=required_role, protection="角色等级匹配校验"),
+        CompareItem(field="目标资源", before=target_resource, after=policy["classification"], protection="资源敏感度分级"),
+        CompareItem(field="允许阶段", before=current_phase, after=", ".join(sorted(policy["allowed_phase"])), protection="阶段约束控制"),
+        CompareItem(field="系统返回", before="教师题库原题全文 + 讲义原文", after="知识点摘要 + 替代练习题", protection="越权后降级为安全替代内容"),
+    ]
+    timeline = [
+        LogEntry(step="越权请求进入治理层", status="received", detail="学生端尝试绕过正常流程，直接请求 AG4 返回教师题库全文。"),
+        LogEntry(step="主体角色识别", status="flagged", detail=f"当前主体角色为 {subject_role}，低于访问 {target_resource} 所需角色 {required_role}。"),
+        LogEntry(step="阶段约束检查", status="blocked", detail=f"当前阶段为 {current_phase}，而该资源仅允许在 {', '.join(sorted(policy['allowed_phase']))} 阶段访问。"),
+        LogEntry(step="版权合规联合判定", status="applied", detail="目标资源属于高敏版权内容 C3，禁止向学生侧直接返回原文。"),
+        LogEntry(step="安全替代输出", status="safe", detail=f"系统执行 {fallback} 策略，不返回原始资源，只返回摘要与替代性生成内容。"),
+    ]
+    return _response(
+        attack_name="privilege_escalation",
+        risk_before=0.88,
+        risk_after=0.18,
+        before_view="攻击者希望以学生身份直接读取教师题库中的原题全文、讲义原文和高权限内部资源。",
+        after_view="系统拒绝原文访问，只返回面向当前学习任务的知识点摘要和替代练习内容。",
+        compare_panel=compare_panel,
+        timeline=timeline,
+        notice="即使攻击者试图越权索取高权限资源，系统也会同时检查角色等级、资源敏感度、当前阶段和版权风险，最终只返回安全降级后的内容。",
     )
 
 
@@ -243,11 +300,13 @@ def _build_attack_response(request: PrivacyAttackDemoRequest) -> PrivacyAttackDe
         return _membership_inference_response(request)
     if attack_name == "linkage_attack":
         return _linkage_attack_response(request)
+    if attack_name == "privilege_escalation":
+        return _privilege_escalation_response()
 
     return _response(
         attack_name=attack_name,
-        risk_before=0.5,
-        risk_after=0.5,
+        risk_before=0.50,
+        risk_after=0.50,
         before_view="当前攻击类型暂未接入演示接口。",
         after_view="请先选择已接入的隐私攻击类型进行演示。",
         compare_panel=[],
@@ -258,24 +317,12 @@ def _build_attack_response(request: PrivacyAttackDemoRequest) -> PrivacyAttackDe
 
 
 @router.post("/attack-demo", response_model=PrivacyAttackDemoResponse)
-@compat_router.post(
-    "/api/privacy/attack-demo",
-    response_model=PrivacyAttackDemoResponse,
-    include_in_schema=False,
-)
-async def privacy_attack_demo(
-    request: PrivacyAttackDemoRequest,
-) -> PrivacyAttackDemoResponse:
+@compat_router.post("/api/privacy/attack-demo", response_model=PrivacyAttackDemoResponse, include_in_schema=False)
+async def privacy_attack_demo(request: PrivacyAttackDemoRequest) -> PrivacyAttackDemoResponse:
     return _build_attack_response(request)
 
 
 @router.post("/prompt-injection-demo", response_model=PrivacyAttackDemoResponse)
-@compat_router.post(
-    "/api/privacy/prompt-injection-demo",
-    response_model=PrivacyAttackDemoResponse,
-    include_in_schema=False,
-)
-async def prompt_injection_demo(
-    request: PrivacyAttackDemoRequest,
-) -> PrivacyAttackDemoResponse:
+@compat_router.post("/api/privacy/prompt-injection-demo", response_model=PrivacyAttackDemoResponse, include_in_schema=False)
+async def prompt_injection_demo(request: PrivacyAttackDemoRequest) -> PrivacyAttackDemoResponse:
     return _prompt_injection_response(request)

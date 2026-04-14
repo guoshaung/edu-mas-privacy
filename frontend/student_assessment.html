@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>&#30693;&#35782;&#26816;&#39564;</title>
+  <script src="./auth.js" data-required-role="student"></script>
+  <script src="./student_stage_guard.js" data-requires-planning="true"></script>
   <style>
     :root {
       --bg: #f6f8fb;
@@ -63,7 +65,7 @@
         <div id="pageTitle" style="font-size:1.5rem;font-weight:700;"></div>
         <div id="pageSubtitle" class="muted"></div>
       </div>
-      <a href="student_hub.html" id="backLink"></a>
+      <a href="student_hub.html" id="backLink" data-nav-back="true"></a>
     </header>
 
     <section class="hero">

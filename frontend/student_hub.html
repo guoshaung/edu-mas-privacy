@@ -1,153 +1,838 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>学生功能总览</title>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+  <title>学生主页</title>
+  <script src="./auth.js" data-required-role="student"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;800&display=swap" rel="stylesheet">
   <style>
-    :root { --bg:#f6f8fb; --panel:#fff; --line:#dbe3ee; --text:#243447; --muted:#6b7c93; --primary:#2f80ed; --soft:#eef4ff; --shadow:0 12px 32px rgba(36,52,71,.08); --success:#166534; --success-soft:#f0fdf4; }
-    * { box-sizing:border-box; }
-    body { margin:0; background:var(--bg); color:var(--text); font-family:"Noto Sans SC",sans-serif; }
-    .shell { width:min(1160px, calc(100% - 28px)); margin:0 auto; padding:24px 0 40px; }
-    .topbar,.card,.hero,.planning-bridge,.menu-bar { background:var(--panel); border:1px solid var(--line); border-radius:20px; box-shadow:var(--shadow); }
-    .topbar { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:18px 22px; margin-bottom:20px; }
-    .menu-bar { display:flex; justify-content:space-between; align-items:center; gap:16px; padding:14px 18px; margin-bottom:20px; }
-    .menu-links { display:flex; gap:10px; flex-wrap:wrap; }
-    .menu-link { display:inline-flex; align-items:center; padding:10px 14px; border-radius:999px; text-decoration:none; font-weight:700; color:var(--primary); background:var(--soft); }
-    .menu-link.active { background:#243447; color:#fff; }
-    .muted { color:var(--muted); }
-    .pill { display:inline-flex; align-items:center; padding:8px 12px; border-radius:999px; background:var(--soft); color:var(--primary); font-weight:700; }
-    .hero { padding:28px; margin-bottom:20px; }
-    .hero h1 { margin:0 0 12px; font-size:2.2rem; }
-    .planning-bridge { padding:22px; margin-bottom:20px; background:linear-gradient(180deg, #ffffff 0%, #f7fcf8 100%); }
-    .bridge-grid { display:grid; grid-template-columns: 1.1fr .9fr; gap:18px; }
-    .bridge-box { border:1px solid var(--line); border-radius:16px; padding:16px; background:#fcfffd; }
-    .bridge-box strong { display:block; margin-bottom:10px; }
-    .grid { display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:18px; }
-    .card { padding:22px; }
-    .icon { width:52px; height:52px; border-radius:14px; display:grid; place-items:center; background:var(--soft); color:var(--primary); font-weight:700; margin-bottom:14px; }
-    .card h2 { margin:0 0 10px; font-size:1.25rem; }
-    .card p { margin:0 0 14px; color:var(--muted); line-height:1.8; }
-    .tag { display:inline-flex; padding:6px 10px; border-radius:999px; background:var(--soft); color:var(--primary); font-size:.88rem; font-weight:700; margin-right:6px; margin-bottom:6px; }
-    .btn { display:inline-block; margin-top:16px; padding:10px 14px; border-radius:12px; background:var(--primary); color:#fff; text-decoration:none; font-weight:700; }
-    .success-tag { display:inline-flex; padding:6px 10px; border-radius:999px; background:var(--success-soft); color:var(--success); font-size:.88rem; font-weight:700; margin-right:6px; margin-bottom:6px; }
-    @media (max-width:900px) { .grid,.bridge-grid{grid-template-columns:1fr;} .topbar{flex-direction:column;align-items:stretch;} }
+    :root {
+      --bg: #f5f8fc;
+      --panel: #ffffff;
+      --panel-soft: #f8fbff;
+      --line: #dde7f3;
+      --text: #1f2a44;
+      --muted: #6f809f;
+      --primary: #2f80ed;
+      --primary-soft: #edf5ff;
+      --accent: #17a673;
+      --accent-soft: #edfdf7;
+      --warn: #b46916;
+      --warn-soft: #fff7eb;
+      --shadow: 0 18px 48px rgba(35, 57, 93, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at top right, rgba(47, 128, 237, 0.08), transparent 24%),
+        linear-gradient(180deg, #f7faff 0%, #f5f8fc 100%);
+      color: var(--text);
+      font-family: "Noto Sans SC", sans-serif;
+    }
+    a { color: inherit; }
+    .shell {
+      width: min(1360px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 22px 0 36px;
+    }
+    .menu-bar,
+    .hero,
+    .sidebar-card,
+    .section-card,
+    .resource-card,
+    .summary-card,
+    .notice-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+    }
+    .menu-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 18px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+    .menu-links {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .menu-link {
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 14px;
+      border-radius: 999px;
+      text-decoration: none;
+      font-weight: 700;
+      color: var(--primary);
+      background: var(--primary-soft);
+    }
+    .menu-link.active {
+      background: #1f2a44;
+      color: #fff;
+    }
+    .menu-tip {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #f6f8fc;
+      color: var(--muted);
+      font-weight: 700;
+      font-size: 0.92rem;
+    }
+    .layout {
+      display: grid;
+      grid-template-columns: 280px minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+    }
+    .sidebar {
+      display: grid;
+      gap: 16px;
+      position: sticky;
+      top: 18px;
+    }
+    .sidebar-card {
+      padding: 18px;
+    }
+    .sidebar-card h2,
+    .section-card h2,
+    .hero h1,
+    .summary-card h3 {
+      margin: 0;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-size: 0.86rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+    }
+    .muted {
+      color: var(--muted);
+      line-height: 1.8;
+    }
+    .module-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .module-link {
+      display: block;
+      text-decoration: none;
+      color: inherit;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 14px;
+      background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+      transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+    }
+    .module-link:hover {
+      transform: translateY(-2px);
+      border-color: #b5d0f6;
+      box-shadow: 0 12px 28px rgba(43, 104, 182, 0.08);
+    }
+    .module-link.locked {
+      opacity: 0.72;
+      background: #fbfcfe;
+      cursor: not-allowed;
+    }
+    .module-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .module-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-weight: 800;
+    }
+    .state-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+    .state-tag.open { background: var(--accent-soft); color: var(--accent); }
+    .state-tag.locked { background: var(--warn-soft); color: var(--warn); }
+    .quick-links {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .quick-link {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 16px;
+      text-decoration: none;
+      font-weight: 700;
+      color: #264266;
+      background: #f8fbff;
+      border: 1px solid var(--line);
+    }
+    .main {
+      display: grid;
+      gap: 18px;
+    }
+    .hero {
+      padding: 26px;
+      display: grid;
+      grid-template-columns: 1.4fr 0.9fr;
+      gap: 18px;
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at top left, rgba(47, 128, 237, 0.12), transparent 28%),
+        radial-gradient(circle at bottom right, rgba(23, 166, 115, 0.12), transparent 24%),
+        linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+    }
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: auto -60px -70px auto;
+      width: 260px;
+      height: 260px;
+      border-radius: 32px;
+      background:
+        linear-gradient(135deg, rgba(47, 128, 237, 0.08), rgba(23, 166, 115, 0.06)),
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 18px,
+          rgba(47, 128, 237, 0.07) 18px,
+          rgba(47, 128, 237, 0.07) 19px
+        );
+      transform: rotate(-14deg);
+      pointer-events: none;
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      top: 26px;
+      right: 280px;
+      width: 132px;
+      height: 132px;
+      border-radius: 50%;
+      border: 18px solid rgba(47, 128, 237, 0.08);
+      box-shadow:
+        68px 28px 0 -32px rgba(23, 166, 115, 0.2),
+        20px 86px 0 -48px rgba(47, 128, 237, 0.16);
+      pointer-events: none;
+    }
+    .hero-copy h1 {
+      margin-top: 12px;
+      margin-bottom: 0;
+      font-size: clamp(1.8rem, 3vw, 2.55rem);
+      line-height: 1.18;
+      max-width: 13ch;
+    }
+    .hero-copy p {
+      margin: 12px 0 0;
+    }
+    .hero-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 22px;
+    }
+    .hero-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px 18px;
+      border-radius: 16px;
+      text-decoration: none;
+      font-weight: 800;
+      border: 1px solid transparent;
+    }
+    .hero-btn.primary {
+      color: #fff;
+      background: linear-gradient(135deg, #2f80ed 0%, #5daaf7 100%);
+    }
+    .hero-btn.secondary {
+      color: var(--primary);
+      background: var(--primary-soft);
+      border-color: #d8e8ff;
+    }
+    .summary-panel {
+      display: grid;
+      gap: 12px;
+      position: relative;
+      z-index: 1;
+    }
+    .summary-card {
+      padding: 16px;
+      background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+    }
+    .summary-card p {
+      margin: 10px 0 0;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+    .hero-copy {
+      position: relative;
+      z-index: 1;
+    }
+    .hero-scene {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+      max-width: 720px;
+    }
+    .scene-card {
+      padding: 14px 14px 12px;
+      border-radius: 18px;
+      border: 1px solid rgba(221, 231, 243, 0.9);
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: blur(6px);
+    }
+    .scene-icon {
+      width: 42px;
+      height: 42px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 14px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+    .scene-card strong {
+      display: block;
+      margin-bottom: 6px;
+    }
+    .scene-card span {
+      color: var(--muted);
+      line-height: 1.65;
+      font-size: 0.92rem;
+    }
+    .summary-value {
+      display: block;
+      font-size: 1.22rem;
+      font-weight: 800;
+      color: var(--primary);
+      margin-top: 8px;
+    }
+    .notice-card {
+      display: none;
+      padding: 16px 18px;
+      border-color: #f6d7ab;
+      background: #fffaf1;
+      color: #8e5a09;
+      font-weight: 700;
+    }
+    .notice-card.visible {
+      display: block;
+    }
+    .section-card {
+      padding: 22px;
+    }
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .section-head p {
+      margin: 8px 0 0;
+      color: var(--muted);
+    }
+    .resource-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .resource-card {
+      padding: 18px;
+      text-decoration: none;
+      color: inherit;
+      background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+      transition: transform 0.16s ease, box-shadow 0.16s ease;
+    }
+    .resource-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 32px rgba(35, 57, 93, 0.08);
+    }
+    .resource-card strong {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 1.04rem;
+    }
+    .resource-card span {
+      color: var(--muted);
+      line-height: 1.7;
+      display: block;
+      min-height: 72px;
+    }
+    .resource-foot {
+      margin-top: 14px;
+      font-size: 0.88rem;
+      color: var(--primary);
+      font-weight: 700;
+    }
+    .track-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .track-card {
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: #fbfdff;
+    }
+    .track-card ol {
+      margin: 12px 0 0;
+      padding-left: 20px;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+    .mini-tags {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .mini-tags span {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #f4f8fe;
+      color: #35557f;
+      font-size: 0.84rem;
+      font-weight: 700;
+    }
+    @media (max-width: 1120px) {
+      .layout,
+      .hero,
+      .resource-grid,
+      .track-grid {
+        grid-template-columns: 1fr;
+      }
+      .hero-scene {
+        grid-template-columns: 1fr;
+      }
+      .sidebar {
+        position: static;
+      }
+    }
+    @media (max-width: 720px) {
+      .shell {
+        width: min(100% - 18px, 100%);
+      }
+      .menu-bar,
+      .hero,
+      .section-card,
+      .sidebar-card {
+        border-radius: 20px;
+      }
+      .resource-grid {
+        grid-template-columns: 1fr;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="shell">
     <nav class="menu-bar">
       <div class="menu-links">
-        <a class="menu-link active" href="student_hub.html">功能页面</a>
+        <a class="menu-link active" href="student_hub.html">主页</a>
         <a class="menu-link" href="student_profile.html">学生页面</a>
+        <a class="menu-link" href="srpg_demo.html">SRPG 双流演示页</a>
+        <a class="menu-link" href="algorithm_showcase.html">算法展示</a>
         <a class="menu-link" href="privacy_lab.html">隐私测试页</a>
       </div>
-      <div class="pill">Demo 导航菜单</div>
+      <div class="menu-tip">学生学习门户</div>
     </nav>
 
-    <header class="topbar">
-      <div>
-        <div style="font-size:1.5rem;font-weight:700;">学生功能总览</div>
-        <div class="muted" id="welcomeText">先从顶部菜单或四个模块中进入具体功能页面。</div>
-      </div>
-      <div class="pill">四个功能模块</div>
-    </header>
+    <div class="layout">
+      <aside class="sidebar">
+        <section class="sidebar-card">
+          <span class="eyebrow">四个学习模块</span>
+          <h2 style="margin-top:12px;">功能入口</h2>
+          <p class="muted">模块都放在左侧，新用户先做诊断，再逐步推进到规划、辅导和知识检验。</p>
+          <div class="module-list" id="moduleList"></div>
+        </section>
 
-    <section class="hero">
-      <h1>诊断、规划、辅导、检验</h1>
-      <div class="muted">统一登录后，先进入这里做模块选择。学习规划生成后，会自动影响后续的辅导和知识检验模块。</div>
-    </section>
-
-    <section class="planning-bridge">
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
-        <div>
-          <div style="font-size:1.2rem;font-weight:700;">规划驱动的后续联动</div>
-          <div class="muted">最近一次学习规划会被自适应辅导与知识检验模块自动读取。</div>
-        </div>
-        <a class="btn" style="margin-top:0;" href="student_planning.html">更新学习规划</a>
-      </div>
-      <div class="bridge-grid" style="margin-top:18px;">
-        <div class="bridge-box">
-          <strong>最近一次规划摘要</strong>
-          <div id="planningSummary" class="muted">尚未生成学习规划。</div>
-        </div>
-        <div class="bridge-box">
-          <strong>规划已影响的模块</strong>
-          <div id="planningImpact">
-            <span class="tag">待生成规划</span>
+        <section class="sidebar-card">
+          <span class="eyebrow">快捷服务</span>
+          <div class="quick-links">
+            <a class="quick-link" href="student_diagnosis.html"><span>开始个性诊断</span><span>→</span></a>
+            <a class="quick-link" href="student_profile.html"><span>查看本地画像</span><span>→</span></a>
+            <a class="quick-link" href="srpg_demo.html"><span>查看 SRPG 双流</span><span>→</span></a>
+            <a class="quick-link" href="privacy_lab.html"><span>体验隐私防护</span><span>→</span></a>
           </div>
-        </div>
-        <div class="bridge-box">
-          <strong>最近一次知识检验</strong>
-          <div id="assessmentSummary" class="muted">尚未生成知识检验结果。</div>
-        </div>
-      </div>
-    </section>
+        </section>
+      </aside>
 
-    <section class="grid">
-      <article class="card">
-        <div class="icon">诊</div>
-        <h2>个性诊断</h2>
-        <p>进入引导式问答，采集学生画像、本地心理状态与学习偏好，生成本地画像报告。</p>
-        <div><span class="tag">本地持久化</span><span class="tag">画像生成</span></div>
-        <a class="btn" href="student_diagnosis.html">进入模块</a>
-      </article>
+      <main class="main">
+        <div class="notice-card" id="hubNotice"></div>
 
-      <article class="card">
-        <div class="icon">规</div>
-        <h2>学习规划</h2>
-        <p>根据诊断结果制定目标科目优先级、周计划、每日任务节奏和推荐学习路径。</p>
-        <div><span class="tag">学习目标</span><span class="tag">周计划</span></div>
-        <a class="btn" href="student_planning.html">进入模块</a>
-      </article>
+        <section class="hero">
+          <div class="hero-copy">
+            <span class="eyebrow">CodeFather 风格学习门户</span>
+            <h1>学习入口、功能入口和外部资源放在同一个主页里。</h1>
+            <p class="muted" id="welcomeText">先做诊断，再生成规划，主页会继续给你推荐课程路线、AI 教程和考试攻略，不让首页只剩空白和说明文字。</p>
+            <div class="hero-actions">
+              <a class="hero-btn primary" href="student_diagnosis.html">立即开始诊断</a>
+              <a class="hero-btn secondary" href="student_planning.html">进入学习规划</a>
+            </div>
+            <div class="hero-scene">
+              <div class="scene-card">
+                <div class="scene-icon">路</div>
+                <strong>学习路线</strong>
+                <span>先修知识、当前主题和阶段任务都在主页集中展示。</span>
+              </div>
+              <div class="scene-card">
+                <div class="scene-icon">AI</div>
+                <strong>AI 教程</strong>
+                <span>把常用 AI 工具和公开课程入口整理成门户卡片。</span>
+              </div>
+              <div class="scene-card">
+                <div class="scene-icon">考</div>
+                <strong>考试攻略</strong>
+                <span>升学、复习和公开课服务可以直接从这里跳转。</span>
+              </div>
+            </div>
+          </div>
 
-      <article class="card">
-        <div class="icon">辅</div>
-        <h2>自适应辅导</h2>
-        <p>自动继承学习规划输出，围绕当前阶段重点给出更合适的讲解方式和辅导策略。</p>
-        <div><span class="success-tag">读取规划结果</span><span class="tag">辅导策略</span></div>
-        <a class="btn" href="student_tutoring.html">进入模块</a>
-      </article>
+          <div class="summary-panel">
+            <article class="summary-card">
+              <h3>当前阶段</h3>
+              <span class="summary-value" id="currentStageValue">待开始</span>
+              <p id="currentStageText">建议先完成个性化诊断，让后续规划与辅导更贴近你的情况。</p>
+            </article>
+            <article class="summary-card">
+              <h3>最近一次规划</h3>
+              <span class="summary-value" id="planningSummaryValue">尚未生成</span>
+              <p id="planningSummaryText">生成学习规划后，这里会展示首阶段目标与后续联动状态。</p>
+            </article>
+            <article class="summary-card">
+              <h3>最近一次检验</h3>
+              <span class="summary-value" id="assessmentSummaryValue">暂无记录</span>
+              <p id="assessmentSummaryText">完成知识检验后，这里会显示得分、掌握度和复盘建议。</p>
+            </article>
+          </div>
+        </section>
 
-      <article class="card">
-        <div class="icon">检</div>
-        <h2>知识检验</h2>
-        <p>根据学习规划的阶段目标生成更贴近当前路径的检测重点、练习顺序和反馈建议。</p>
-        <div><span class="success-tag">读取规划结果</span><span class="tag">掌握分析</span></div>
-        <a class="btn" href="student_assessment.html">进入模块</a>
-      </article>
-    </section>
+        <section class="section-card">
+          <div class="section-head">
+            <div>
+              <h2>学习路线</h2>
+              <p>把高频学习任务做成清晰的路线图，方便你从“先学什么”切到“去哪里学”。</p>
+            </div>
+            <span class="eyebrow">课程导航</span>
+          </div>
+          <div class="track-grid">
+            <article class="track-card">
+              <strong>数学提升线</strong>
+              <ol>
+                <li>先完成个性诊断，确认认知风格与薄弱点。</li>
+                <li>在学习规划里生成本周矩阵、函数或数列任务。</li>
+                <li>进入自适应辅导，用 AG3 做拆题讲解与追问。</li>
+                <li>最后去知识检验页完成阶段测评。</li>
+              </ol>
+              <div class="mini-tags">
+                <span>诊断</span>
+                <span>规划</span>
+                <span>辅导</span>
+                <span>检验</span>
+              </div>
+            </article>
+            <article class="track-card">
+              <strong>AI 学习辅助线</strong>
+              <ol>
+                <li>在主页浏览 AI 教程与公共学习平台。</li>
+                <li>把遇到的题目带到自适应辅导页提问。</li>
+                <li>结合题库和讲义资源做拓展练习。</li>
+                <li>在隐私测试页观察系统如何保护你的数据。</li>
+              </ol>
+              <div class="mini-tags">
+                <span>AI 教程</span>
+                <span>题库</span>
+                <span>隐私保护</span>
+              </div>
+            </article>
+          </div>
+        </section>
+
+        <section class="section-card">
+          <div class="section-head">
+            <div>
+              <h2>AI 教程</h2>
+              <p>把常用的学习平台和 AI 工具入口集中到主页中间，形成门户型浏览体验。</p>
+            </div>
+            <span class="eyebrow">现有服务</span>
+          </div>
+          <div class="resource-grid" id="tutorialGrid"></div>
+        </section>
+
+        <section class="section-card">
+          <div class="section-head">
+            <div>
+              <h2>考试攻略</h2>
+              <p>这块偏“信息门户”风格，给你留出查资料、看政策和找课程的入口，不让主页空着。</p>
+            </div>
+            <span class="eyebrow">攻略入口</span>
+          </div>
+          <div class="resource-grid" id="examGrid"></div>
+        </section>
+      </main>
+    </div>
   </div>
 
   <script>
-    try {
-      const profile = JSON.parse(sessionStorage.getItem("eduMasProfile") || "null");
+    const diagnosisResult = readJson("eduMasDiagnosisResult");
+    const planningResult = readJson("eduMasPlanningResult");
+    const assessmentResult = readJson("eduMasAssessmentResult");
+    const profile = readSessionJson("eduMasProfile");
+
+    const modules = [
+      {
+        key: "diagnosis",
+        icon: "诊",
+        title: "个性诊断",
+        description: "采集学习风格、科目兴趣和心理状态，生成本地画像。",
+        href: "student_diagnosis.html",
+        unlocked: true,
+        state: diagnosisResult ? "已完成" : "建议先做"
+      },
+      {
+        key: "planning",
+        icon: "规",
+        title: "学习规划",
+        description: "根据诊断与当前主题生成分阶段学习路径。",
+        href: "student_planning.html",
+        unlocked: true,
+        state: planningResult ? "已生成" : "待进入"
+      },
+      {
+        key: "tutoring",
+        icon: "辅",
+        title: "自适应辅导",
+        description: "结合规划结果进行多轮讲解、练习和追问。",
+        href: "student_tutoring.html",
+        unlocked: Boolean(diagnosisResult && planningResult),
+        state: diagnosisResult && planningResult ? "已解锁" : "需先完成诊断与规划"
+      },
+      {
+        key: "assessment",
+        icon: "检",
+        title: "知识检验",
+        description: "围绕当前学习路线生成题目并输出掌握度反馈。",
+        href: "student_assessment.html",
+        unlocked: Boolean(diagnosisResult && planningResult),
+        state: diagnosisResult && planningResult ? "已解锁" : "需先完成诊断与规划"
+      }
+    ];
+
+    const tutorialCards = [
+      {
+        title: "CodeFather 学习门户",
+        desc: "看课程导航、资源合集和学习社区信息，主页风格也参考了这种门户布局。",
+        href: "https://www.codefather.cn/",
+        foot: "课程门户"
+      },
+      {
+        title: "CodeFather AI 导航",
+        desc: "汇总常见 AI 工具和使用场景，适合配合你的 AI 学习辅助线一起浏览。",
+        href: "https://ai.codefather.cn/",
+        foot: "AI 工具"
+      },
+      {
+        title: "中国大学 MOOC",
+        desc: "适合补课和系统学习，把规划页里需要强化的主题拿到这里找公开课程。",
+        href: "https://www.icourse163.org/",
+        foot: "公开课"
+      },
+      {
+        title: "国家智慧教育平台",
+        desc: "中小学到职业教育资源都比较全，适合作为学习路线的外部资料池。",
+        href: "https://basic.smartedu.cn/",
+        foot: "官方资源"
+      },
+      {
+        title: "哔哩哔哩学习区",
+        desc: "快速找题解、知识点讲解和应试经验，适合搭配自适应辅导做补充理解。",
+        href: "https://www.bilibili.com/",
+        foot: "视频学习"
+      },
+      {
+        title: "国家中小学智慧教育平台",
+        desc: "偏基础教育课程资源，适合把诊断出来的薄弱点拿去做外部补课。",
+        href: "https://www.zxx.edu.cn/",
+        foot: "基础教育"
+      }
+    ];
+
+    const examCards = [
+      {
+        title: "高考升学信息",
+        desc: "查政策、看分数线、了解专业和考试安排，适合放在主页做长期入口。",
+        href: "https://gaozhong.eol.cn/",
+        foot: "升学信息"
+      },
+      {
+        title: "网易公开课",
+        desc: "当学习规划发现基础不稳时，可以先从公开课或通识内容补背景知识。",
+        href: "https://www.icourse163.cn/",
+        foot: "通识课程"
+      },
+      {
+        title: "学习计划复盘",
+        desc: "先去生成学习规划，再回到这里查看本周重点和辅导入口，形成闭环。",
+        href: "student_planning.html",
+        foot: "站内功能"
+      }
+    ];
+
+    renderModules();
+    renderCards("tutorialGrid", tutorialCards);
+    renderCards("examGrid", examCards);
+    renderSummary();
+    renderNotice();
+
+    function renderModules() {
+      const container = document.getElementById("moduleList");
+      container.innerHTML = modules.map((module) => {
+        const stateClass = module.unlocked ? "open" : "locked";
+        const stateText = module.unlocked ? module.state : "未解锁";
+        const href = module.unlocked ? module.href : "student_hub.html";
+        const extra = module.unlocked ? "" : ' data-locked="true"';
+        return `
+          <a class="module-link ${module.unlocked ? "" : "locked"}" href="${href}"${extra}>
+            <div class="module-top">
+              <span class="module-badge">${module.icon}</span>
+              <span class="state-tag ${stateClass}">${stateText}</span>
+            </div>
+            <strong>${module.title}</strong>
+            <div class="muted">${module.description}</div>
+          </a>
+        `;
+      }).join("");
+
+      Array.from(container.querySelectorAll("[data-locked='true']")).forEach((node) => {
+        node.addEventListener("click", (event) => {
+          event.preventDefault();
+          const notice = diagnosisResult
+            ? "请先完成学习规划，再进入辅导与知识检验。"
+            : "请先完成个性化诊断，再进入辅导与知识检验。";
+          sessionStorage.setItem("eduMasHubNotice", notice);
+          renderNotice();
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+      });
+    }
+
+    function renderCards(targetId, cards) {
+      const target = document.getElementById(targetId);
+      target.innerHTML = cards.map((card) => {
+        const external = /^https?:\/\//.test(card.href);
+        const attrs = external ? ' target="_blank" rel="noreferrer"' : "";
+        return `
+          <a class="resource-card" href="${card.href}"${attrs}>
+            <strong>${card.title}</strong>
+            <span>${card.desc}</span>
+            <div class="resource-foot">${card.foot} →</div>
+          </a>
+        `;
+      }).join("");
+    }
+
+    function renderSummary() {
+      const currentStageValue = document.getElementById("currentStageValue");
+      const currentStageText = document.getElementById("currentStageText");
+      const planningSummaryValue = document.getElementById("planningSummaryValue");
+      const planningSummaryText = document.getElementById("planningSummaryText");
+      const assessmentSummaryValue = document.getElementById("assessmentSummaryValue");
+      const assessmentSummaryText = document.getElementById("assessmentSummaryText");
+      const welcomeText = document.getElementById("welcomeText");
+
       if (profile && profile.displayName) {
-        document.getElementById("welcomeText").textContent = profile.displayName + "，先从四个模块中选择一个，再进入对应的具体功能页面。";
+        welcomeText.textContent = `${profile.displayName}，主页已经帮你把功能、学习路线和外部资源都串起来了。先完成诊断，再逐步进入规划、辅导和检验。`;
       }
-    } catch (e) {}
 
-    try {
-      const planningResult = JSON.parse(localStorage.getItem("eduMasPlanningResult") || "null");
+      if (diagnosisResult && planningResult) {
+        currentStageValue.textContent = "已进入学习闭环";
+        currentStageText.textContent = "你已经完成诊断与规划，可以直接进入自适应辅导或知识检验。";
+      } else if (diagnosisResult) {
+        currentStageValue.textContent = "待生成规划";
+        currentStageText.textContent = "诊断已完成，下一步建议生成学习规划，让辅导和检验有明确路线。";
+      } else {
+        currentStageValue.textContent = "待开始";
+        currentStageText.textContent = "先完成个性化诊断，系统才能为你生成更贴合的规划和辅导内容。";
+      }
+
       if (planningResult && Array.isArray(planningResult.planning_path) && planningResult.planning_path.length) {
-        document.getElementById("planningSummary").textContent = planningResult.diagnosis_result || "已生成学习规划。";
-        document.getElementById("planningImpact").innerHTML = [
-          '<span class="success-tag">自适应辅导已联动</span>',
-          '<span class="success-tag">知识检验已联动</span>',
-          `<span class="tag">首阶段：${planningResult.planning_path[0].stage}</span>`
-        ].join('');
+        planningSummaryValue.textContent = planningResult.planning_path[0].stage || "已生成";
+        planningSummaryText.textContent = planningResult.diagnosis_result || "学习规划已生成，后续辅导与检验会自动读取这条路径。";
       }
-    } catch (e) {}
 
-    try {
-      const assessmentResult = JSON.parse(localStorage.getItem("eduMasAssessmentResult") || "null");
-      if (assessmentResult && typeof assessmentResult === "object") {
-        const score = `${assessmentResult.score || 0}/${assessmentResult.total || 0}`;
-        const mastery = assessmentResult.mastery_level || "pending";
-        document.getElementById("assessmentSummary").textContent = `最近一次得分 ${score}，掌握度 ${mastery}。`;
+      if (assessmentResult) {
+        assessmentSummaryValue.textContent = `${assessmentResult.score || 0}/${assessmentResult.total || 0}`;
+        assessmentSummaryText.textContent = `最近一次掌握度：${assessmentResult.mastery_level || "pending"}。建议根据错题反馈回到辅导页继续强化。`;
       }
-    } catch (e) {}
+    }
+
+    function renderNotice() {
+      const noticeNode = document.getElementById("hubNotice");
+      const notice = sessionStorage.getItem("eduMasHubNotice") || "";
+      if (!notice) {
+        noticeNode.classList.remove("visible");
+        noticeNode.textContent = "";
+        return;
+      }
+      noticeNode.textContent = notice;
+      noticeNode.classList.add("visible");
+      sessionStorage.removeItem("eduMasHubNotice");
+    }
+
+    function readJson(key) {
+      try {
+        const raw = localStorage.getItem(key);
+        return raw ? JSON.parse(raw) : null;
+      } catch (error) {
+        return null;
+      }
+    }
+
+    function readSessionJson(key) {
+      try {
+        const raw = sessionStorage.getItem(key);
+        return raw ? JSON.parse(raw) : null;
+      } catch (error) {
+        return null;
+      }
+    }
   </script>
 </body>
 </html>

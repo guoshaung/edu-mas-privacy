@@ -3,6 +3,7 @@ import sys
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -19,10 +20,15 @@ from gateway.tts_gateway import compat_router as tts_compat_router
 from gateway.tts_gateway import router as tts_router
 
 
+class UTF8JSONResponse(JSONResponse):
+    media_type = "application/json; charset=utf-8"
+
+
 app = FastAPI(
     title="EduMAS Cloud Gateway",
     description="FastAPI privacy gateway for learning planning, adaptive tutoring, and assessment.",
     version="1.0.0",
+    default_response_class=UTF8JSONResponse,
 )
 
 app.add_middleware(

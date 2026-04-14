@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>学生学习台 - 个性诊断</title>
+  <script src="./auth.js" data-required-role="student"></script>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;800&display=swap" rel="stylesheet">
   <style>
     :root { --bg1:#f6f8fb; --bg2:#f1f5f9; --panel:#ffffff; --line:#dbe3ee; --text:#223248; --muted:#718199; --primary:#2f80ed; --primary2:#1f6fd6; --success:#45b36b; --shadow:0 12px 32px rgba(42,88,136,.08); }
@@ -18,6 +19,8 @@
     .brand h1 { margin:0; font-size:1.35rem; }
     .muted { color:var(--muted); }
     .pill { display:inline-flex; align-items:center; padding:9px 13px; border-radius:999px; background:rgba(41,167,239,.1); color:var(--primary2); font-weight:700; font-size:.92rem; }
+    .topbar-actions { display:flex; align-items:center; gap:12px; flex-wrap:wrap; justify-content:flex-end; }
+    .back-link { display:inline-flex; align-items:center; padding:10px 14px; border-radius:999px; text-decoration:none; font-weight:700; color:var(--primary2); background:rgba(41,167,239,.09); }
     .hero { display:grid; grid-template-columns:1.08fr .92fr; gap:20px; margin-bottom:20px; }
     .card { padding:28px; }
     .eyebrow { display:inline-block; padding:8px 12px; border-radius:999px; background:rgba(41,167,239,.1); color:var(--primary2); font-weight:700; font-size:.84rem; }
@@ -89,7 +92,10 @@
           <div class="muted" id="welcomeText">引导式收集学生学习画像，结果默认只保存在本地浏览器。</div>
         </div>
       </div>
-      <div class="pill" id="storageStatus">本地存储：未完成</div>
+      <div class="topbar-actions">
+        <a class="back-link" href="student_hub.html" data-nav-back="true">返回功能总览</a>
+        <div class="pill" id="storageStatus">本地存储：未完成</div>
+      </div>
     </header>
 
     <section class="hero">

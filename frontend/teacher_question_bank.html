@@ -2,11 +2,13 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>公共题库管理</title>
+  <script src="./auth.js" data-required-role="teacher"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.min.js"></script>
   <style>
-    :root { --bg:#f6f8fb; --panel:#fff; --line:#dbe3ee; --text:#243447; --muted:#6b7c93; --primary:#2f80ed; --soft:#eef4ff; --shadow:0 12px 32px rgba(36,52,71,.08); --success:#166534; --success-soft:#ecfdf3; --danger:#b42318; }
+    :root { --bg:#f6f8fb; --panel:#fff; --line:#dbe3ee; --text:#243447; --muted:#6b7c93; --primary:#2f80ed; --soft:#eef4ff; --shadow:0 12px 32px rgba(36,52,71,.08); --success:#166534; --success-soft:#ecfdf3; --danger:#b42318; --warn:#b45309; --warn-soft:#fff7ed; }
     * { box-sizing:border-box; }
     body { margin:0; background:var(--bg); color:var(--text); font-family:"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; }
     .shell { width:min(1260px, calc(100% - 28px)); margin:0 auto; padding:24px 0 40px; }
@@ -23,6 +25,8 @@
     .field label { font-weight:700; }
     .input, .textarea, .select { width:100%; padding:11px 12px; border:1px solid var(--line); border-radius:12px; font:inherit; }
     .textarea { min-height:140px; resize:vertical; }
+    .inline-grid { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:12px; }
+    .checkbox-row { display:flex; gap:16px; flex-wrap:wrap; align-items:center; margin-top:4px; }
     .btn-row { display:flex; gap:10px; flex-wrap:wrap; }
     .btn { display:inline-flex; align-items:center; justify-content:center; padding:10px 14px; border:none; border-radius:12px; font-weight:700; cursor:pointer; }
     .btn.primary { background:var(--primary); color:#fff; }
@@ -33,7 +37,9 @@
     .resource-list { display:grid; gap:12px; }
     .resource-item { border:1px solid var(--line); border-radius:16px; padding:14px; background:#fbfdff; }
     .tag { display:inline-flex; padding:6px 10px; border-radius:999px; background:var(--soft); color:var(--primary); font-size:.84rem; font-weight:700; margin-right:8px; margin-bottom:8px; }
-    @media (max-width:980px) { .layout { grid-template-columns:1fr; } }
+    .tag.warn { background:var(--warn-soft); color:var(--warn); }
+    .tag.success { background:var(--success-soft); color:var(--success); }
+    @media (max-width:980px) { .layout, .inline-grid { grid-template-columns:1fr; } }
   </style>
 </head>
 <body>
@@ -49,7 +55,7 @@
 
     <section class="hero">
       <h1 style="margin:0 0 10px;">公共题库管理</h1>
-      <div class="muted">教师可以在这里补充公共题库与知识文档。AG4 会把这里的资源作为公共 RAG 检索来源，按主题和关键词召回给 AG3 使用。</div>
+      <div class="muted">现在你上传资料时可以同时标注版权等级、授权范围、是否允许学生查看原文、是否允许系统生成衍生内容。AG4 后续会根据这些字段决定返回全文、摘要还是替代生成。</div>
     </section>
 
     <section class="layout">
@@ -59,22 +65,62 @@
           <label for="titleInput">资料标题</label>
           <input id="titleInput" class="input" placeholder="例如：矩阵乘法维度检查讲义" />
         </div>
-        <div class="field">
-          <label for="subjectInput">学科</label>
-          <input id="subjectInput" class="input" value="数学" />
+        <div class="inline-grid">
+          <div class="field">
+            <label for="subjectInput">学科</label>
+            <input id="subjectInput" class="input" value="数学" />
+          </div>
+          <div class="field">
+            <label for="ownerTeacherInput">上传教师</label>
+            <input id="ownerTeacherInput" class="input" value="李四" />
+          </div>
         </div>
-        <div class="field">
-          <label for="typeInput">资料类型</label>
-          <select id="typeInput" class="select">
-            <option value="lesson_note">讲义</option>
-            <option value="exercise">题目</option>
-            <option value="knowledge_doc">知识文档</option>
-            <option value="worksheet">练习单</option>
-          </select>
+        <div class="inline-grid">
+          <div class="field">
+            <label for="typeInput">资料类型</label>
+            <select id="typeInput" class="select">
+              <option value="lesson_note">讲义</option>
+              <option value="exercise">题目</option>
+              <option value="knowledge_doc">知识文档</option>
+              <option value="worksheet">练习单</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="sourceInput">来源说明</label>
+            <input id="sourceInput" class="input" value="教师上传" />
+          </div>
         </div>
         <div class="field">
           <label for="tagInput">标签</label>
           <input id="tagInput" class="input" placeholder="用逗号分隔，例如：矩阵乘法, 维度匹配, 变式题" />
+        </div>
+        <div class="inline-grid">
+          <div class="field">
+            <label for="copyrightLevelInput">版权等级</label>
+            <select id="copyrightLevelInput" class="select">
+              <option value="public_open">公开可用</option>
+              <option value="school_authorized" selected>校内授权</option>
+              <option value="class_authorized">班级授权</option>
+              <option value="teacher_private">教师私有</option>
+              <option value="restricted_original">禁止原文外发</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="accessScopeInput">授权范围</label>
+            <select id="accessScopeInput" class="select">
+              <option value="public">公开</option>
+              <option value="school" selected>校内</option>
+              <option value="class">班级</option>
+              <option value="teacher_only">仅教师</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label>版权策略</label>
+          <div class="checkbox-row">
+            <label><input id="fulltextToStudentInput" type="checkbox" /> 允许学生查看原文</label>
+            <label><input id="derivativeInput" type="checkbox" checked /> 允许系统生成衍生内容</label>
+          </div>
         </div>
         <div class="field">
           <label for="contentInput">资料内容</label>
@@ -107,11 +153,35 @@
   <script>
     const titleInput = document.getElementById('titleInput');
     const subjectInput = document.getElementById('subjectInput');
+    const ownerTeacherInput = document.getElementById('ownerTeacherInput');
     const typeInput = document.getElementById('typeInput');
+    const sourceInput = document.getElementById('sourceInput');
     const tagInput = document.getElementById('tagInput');
+    const copyrightLevelInput = document.getElementById('copyrightLevelInput');
+    const accessScopeInput = document.getElementById('accessScopeInput');
+    const fulltextToStudentInput = document.getElementById('fulltextToStudentInput');
+    const derivativeInput = document.getElementById('derivativeInput');
     const contentInput = document.getElementById('contentInput');
     const fileInput = document.getElementById('fileInput');
     const statusText = document.getElementById('statusText');
+    if (window.pdfjsLib) {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.4.168/build/pdf.worker.min.js';
+    }
+
+    const copyrightMap = {
+      public_open: '公开可用',
+      school_authorized: '校内授权',
+      class_authorized: '班级授权',
+      teacher_private: '教师私有',
+      restricted_original: '禁止原文外发'
+    };
+
+    const scopeMap = {
+      public: '公开',
+      school: '校内',
+      class: '班级',
+      teacher_only: '仅教师'
+    };
 
     function setStatus(message, type) {
       statusText.className = 'status' + (type ? ' ' + type : '');
@@ -121,23 +191,89 @@
     function resetForm() {
       titleInput.value = '';
       subjectInput.value = '数学';
+      ownerTeacherInput.value = '李四';
       typeInput.value = 'lesson_note';
+      sourceInput.value = '教师上传';
       tagInput.value = '';
+      copyrightLevelInput.value = 'school_authorized';
+      accessScopeInput.value = 'school';
+      fulltextToStudentInput.checked = false;
+      derivativeInput.checked = true;
       contentInput.value = '';
       fileInput.value = '';
       setStatus('', '');
     }
 
+    async function decodeTextFile(file) {
+      const buffer = await file.arrayBuffer();
+      const decoders = ['utf-8', 'gb18030', 'gbk', 'utf-16le'];
+      let bestText = '';
+      let bestScore = -1;
+      for (const encoding of decoders) {
+        try {
+          const decoder = new TextDecoder(encoding, { fatal: false });
+          const text = decoder.decode(buffer);
+          const score = (text.match(/[\u4e00-\u9fa5A-Za-z0-9=+\-*/(){}\[\]\\]/g) || []).length;
+          if (score > bestScore) {
+            bestScore = score;
+            bestText = text;
+          }
+        } catch (error) {}
+      }
+      return bestText;
+    }
+
+    async function parseDocxFile(file) {
+      const arrayBuffer = await file.arrayBuffer();
+      const result = await window.mammoth.extractRawText({ arrayBuffer });
+      return result.value || '';
+    }
+
+    async function parsePdfFile(file) {
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await window.pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+      const pages = [];
+      for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+        const page = await pdf.getPage(pageNumber);
+        const textContent = await page.getTextContent();
+        const text = textContent.items.map((item) => item.str).join(' ');
+        pages.push(text);
+      }
+      return pages.join('\n');
+    }
+
+    async function extractFileContent(file) {
+      const extension = (file.name.split('.').pop() || '').toLowerCase();
+      if (['txt', 'md', 'csv', 'json', 'tex', 'html'].includes(extension)) {
+        return decodeTextFile(file);
+      }
+      if (extension === 'docx') {
+        return parseDocxFile(file);
+      }
+      if (extension === 'pdf') {
+        return parsePdfFile(file);
+      }
+      throw new Error('当前仅支持 txt/md/csv/json/tex/html/docx/pdf 文件导入');
+    }
+
     fileInput.addEventListener('change', async (event) => {
       const file = event.target.files && event.target.files[0];
       if (!file) return;
-      const text = await file.text();
-      if (!titleInput.value) {
-        titleInput.value = file.name.replace(/\.[^.]+$/, '');
+      try {
+        const text = await extractFileContent(file);
+        if (!titleInput.value) {
+          titleInput.value = file.name.replace(/\.[^.]+$/, '');
+        }
+        contentInput.value = text.trim();
+        setStatus('已解析文件内容，请继续选择版权等级和授权范围。若数学公式较复杂，建议优先上传 docx、可复制文本的 pdf 或 tex。', 'ok');
+      } catch (error) {
+        setStatus(`文件解析失败：${error.message}`, 'error');
       }
-      contentInput.value = text;
-      setStatus('已从本地文件导入内容，可以直接保存到公共题库。', 'ok');
     });
+
+    function renderTag(text, cls = '') {
+      return `<span class="tag ${cls}">${text}</span>`;
+    }
 
     async function loadBank() {
       const list = document.getElementById('resourceList');
@@ -151,8 +287,16 @@
               <strong>${item.title}</strong>
               <span class="tag">${item.resource_type}</span>
             </div>
-            <div class="muted">学科：${item.subject} | 来源：${item.source || '教师上传'}</div>
+            <div class="muted">学科：${item.subject} | 来源：${item.source || '教师上传'} | 上传教师：${item.owner_teacher || '未标注'}</div>
+            <div style="margin-top:10px;">
+              ${renderTag(copyrightMap[item.copyright_level] || item.copyright_level, item.copyright_level === 'public_open' ? 'success' : 'warn')}
+              ${renderTag('授权范围：' + (scopeMap[item.access_scope] || item.access_scope))}
+              ${renderTag(item.allow_fulltext_to_student ? '学生可看原文' : '学生不可看原文', item.allow_fulltext_to_student ? 'success' : 'warn')}
+              ${renderTag(item.allow_derivative_generation ? '允许衍生生成' : '禁止衍生生成')}
+              ${item.delivery_policy ? renderTag('AG4交付：' + item.delivery_policy.teacher_policy_hint, item.delivery_policy.decision === 'fulltext' ? 'success' : 'warn') : ''}
+            </div>
             <div style="margin-top:10px;">${(item.tags || []).map((tag) => `<span class="tag">${tag}</span>`).join('')}</div>
+            ${item.delivery_policy ? `<div class="muted" style="margin:8px 0 4px;">学生侧交付策略：${item.delivery_policy.reason}</div>` : ''}
             <div class="muted">${item.content}</div>
           </div>
         `).join('');
@@ -166,13 +310,18 @@
       const payload = {
         title: titleInput.value.trim(),
         subject: subjectInput.value.trim(),
+        owner_teacher: ownerTeacherInput.value.trim(),
         resource_type: typeInput.value,
+        source: sourceInput.value.trim() || '教师上传',
         tags: tagInput.value.split(',').map((item) => item.trim()).filter(Boolean),
-        content: contentInput.value.trim(),
-        source: '教师上传'
+        copyright_level: copyrightLevelInput.value,
+        access_scope: accessScopeInput.value,
+        allow_fulltext_to_student: fulltextToStudentInput.checked,
+        allow_derivative_generation: derivativeInput.checked,
+        content: contentInput.value.trim()
       };
-      if (!payload.title || !payload.subject || !payload.content) {
-        setStatus('请至少填写标题、学科和资料内容。', 'error');
+      if (!payload.title || !payload.subject || !payload.content || !payload.owner_teacher) {
+        setStatus('请填写标题、学科、上传教师和资料内容。', 'error');
         return;
       }
       try {
@@ -185,7 +334,7 @@
         if (!response.ok) {
           throw new Error(result.detail || '保存失败');
         }
-        setStatus('资料已保存到公共题库，AG4 后续检索可直接使用。', 'ok');
+        setStatus('资料和版权策略已保存到公共题库，AG4 后续检索会参考这些字段。', 'ok');
         resetForm();
         loadBank();
       } catch (error) {

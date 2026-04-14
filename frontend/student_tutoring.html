@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>&#33258;&#36866;&#24212;&#36741;&#23548;</title>
+  <script src="./auth.js" data-required-role="student"></script>
+  <script src="./student_stage_guard.js" data-requires-planning="true"></script>
   <style>
     :root {
       --bg: #f6f8fb;
@@ -62,7 +64,7 @@
     .companion-panel {
       position: fixed;
       right: 22px;
-      bottom: 320px;
+      top: 136px;
       width: min(320px, calc(100vw - 24px));
       padding: 14px;
       border: 1px solid var(--line);
@@ -71,9 +73,16 @@
       box-shadow: var(--shadow);
       backdrop-filter: blur(12px);
       z-index: 998;
+      max-height: calc(100vh - 152px);
+      overflow: hidden;
     }
     .companion-panel.minimized .companion-body {
       display: none;
+    }
+    .companion-body {
+      max-height: calc(100vh - 232px);
+      overflow: auto;
+      padding-right: 2px;
     }
     .companion-header {
       display: flex;
@@ -81,6 +90,8 @@
       justify-content: space-between;
       gap: 12px;
       cursor: move;
+      padding-bottom: 6px;
+      border-bottom: 1px dashed #e2e8f0;
     }
     .companion-title-wrap {
       min-width: 0;
@@ -112,6 +123,11 @@
       color: var(--muted);
       line-height: 1.7;
     }
+    .companion-drag-hint {
+      margin-top: 6px;
+      font-size: .82rem;
+      color: var(--muted);
+    }
     .companion-preview {
       margin-top: 10px;
       padding: 10px 12px;
@@ -128,6 +144,13 @@
       gap: 10px;
       flex-wrap: wrap;
       margin-top: 12px;
+    }
+    .companion-footer {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px dashed #e2e8f0;
     }
     .companion-chip {
       display: inline-flex;
@@ -155,6 +178,31 @@
       left: auto !important;
       right: 16px !important;
     }
+    .waifu-tips {
+      position: fixed !important;
+      left: auto !important;
+      right: 160px !important;
+      bottom: 240px !important;
+      max-width: min(360px, calc(100vw - 32px)) !important;
+      cursor: move !important;
+      user-select: none;
+      padding-right: 42px !important;
+      z-index: 999 !important;
+    }
+    .waifu-tips-close {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      width: 24px;
+      height: 24px;
+      border-radius: 999px;
+      border: 1px solid rgba(36, 52, 71, 0.12);
+      background: rgba(255, 255, 255, 0.92);
+      color: #243447;
+      font-size: 14px;
+      line-height: 1;
+      cursor: pointer;
+    }
     .companion-field {
       margin-top: 12px;
       display: grid;
@@ -173,25 +221,207 @@
       background: #fff;
       color: var(--text);
     }
+    .companion-toggle {
+      position: fixed;
+      right: 18px;
+      top: 180px;
+      z-index: 999;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      min-width: 120px;
+      padding: 10px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: rgba(255, 255, 255, 0.96);
+      box-shadow: var(--shadow);
+      color: var(--primary);
+      font-weight: 700;
+      cursor: pointer;
+      backdrop-filter: blur(12px);
+    }
+    .companion-toggle.visible {
+      display: inline-flex;
+    }
+    .left-widget {
+      position: fixed;
+      left: 18px;
+      top: 148px;
+      width: 180px;
+      z-index: 996;
+      display: grid;
+      gap: 14px;
+    }
+    .quote-card, .cube-card {
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(12px);
+      overflow: hidden;
+    }
+    .quote-card {
+      padding: 16px;
+    }
+    .quote-title {
+      font-size: .86rem;
+      font-weight: 800;
+      color: var(--primary);
+      letter-spacing: .04em;
+      margin-bottom: 10px;
+    }
+    .quote-text {
+      line-height: 1.9;
+      color: #334155;
+      font-size: .95rem;
+      min-height: 96px;
+    }
+    .quote-tip {
+      margin-top: 10px;
+      font-size: .82rem;
+      color: var(--muted);
+    }
+    .cube-card {
+      padding: 14px 12px 16px;
+      text-align: center;
+      min-height: 260px;
+    }
+    .cube-title {
+      font-size: .84rem;
+      font-weight: 800;
+      color: #7c3aed;
+      margin-bottom: 8px;
+    }
+    .cube-tip {
+      margin-top: 8px;
+      font-size: .78rem;
+      color: var(--muted);
+      line-height: 1.6;
+    }
+    .cube-scene {
+      position: relative;
+      width: 146px;
+      height: 146px;
+      margin: 12px auto 4px;
+      perspective: 680px;
+      perspective-origin: center;
+      overflow: hidden;
+      border-radius: 18px;
+      background: radial-gradient(circle at center, rgba(124, 58, 237, 0.08), rgba(96, 165, 250, 0.03));
+    }
+    .cube {
+      position: absolute;
+      top: 37px;
+      left: 37px;
+      width: 72px;
+      height: 72px;
+      transform-style: preserve-3d;
+      animation:
+        cube-float 9s ease-in-out infinite alternate,
+        cube-spin 12s linear infinite;
+      transition: transform .45s ease, top .45s ease, left .45s ease;
+    }
+    .cube-face {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      font-weight: 800;
+      color: #fff;
+      border: 2px solid rgba(255, 255, 255, 0.72);
+      box-shadow: inset 0 0 18px rgba(255, 255, 255, 0.15);
+      transition: transform .45s ease;
+      text-align: center;
+      line-height: 1.15;
+      padding: 6px;
+    }
+    .cube-face.front { background: linear-gradient(135deg, #60a5fa, #2563eb); transform: translateZ(36px); }
+    .cube-face.back { background: linear-gradient(135deg, #22c55e, #15803d); transform: rotateY(180deg) translateZ(36px); }
+    .cube-face.right { background: linear-gradient(135deg, #f59e0b, #d97706); transform: rotateY(90deg) translateZ(36px); }
+    .cube-face.left { background: linear-gradient(135deg, #ec4899, #be185d); transform: rotateY(-90deg) translateZ(36px); }
+    .cube-face.top { background: linear-gradient(135deg, #a78bfa, #7c3aed); transform: rotateX(90deg) translateZ(36px); }
+    .cube-face.bottom { background: linear-gradient(135deg, #14b8a6, #0f766e); transform: rotateX(-90deg) translateZ(36px); }
+    .cube-scene:hover .cube {
+      animation-play-state: paused;
+      transform: rotateX(-18deg) rotateY(28deg);
+    }
+    .cube-scene:hover .cube::before {
+      opacity: 1;
+    }
+    .cube-scene:hover .cube-face.front { transform: translateZ(58px); }
+    .cube-scene:hover .cube-face.back { transform: rotateY(180deg) translateZ(58px); }
+    .cube-scene:hover .cube-face.right { transform: rotateY(90deg) translateZ(58px); }
+    .cube-scene:hover .cube-face.left { transform: rotateY(-90deg) translateZ(58px); }
+    .cube-scene:hover .cube-face.top { transform: rotateX(90deg) translateZ(58px); }
+    .cube-scene:hover .cube-face.bottom { transform: rotateX(-90deg) translateZ(58px); }
+    @keyframes cube-float {
+      0% { top: 16px; left: 12px; }
+      20% { top: 52px; left: 58px; }
+      45% { top: 74px; left: 22px; }
+      70% { top: 28px; left: 70px; }
+      100% { top: 58px; left: 40px; }
+    }
+    @keyframes cube-spin {
+      0% { transform: rotateX(-18deg) rotateY(0deg); }
+      100% { transform: rotateX(-18deg) rotateY(360deg); }
+    }
     @media (max-width: 980px) {
       .hero-grid, .grid { grid-template-columns: 1fr; }
+      .left-widget {
+        position: static;
+        width: 100%;
+        grid-template-columns: 1fr 1fr;
+        margin-bottom: 18px;
+      }
       .companion-panel {
         right: 12px;
         left: 12px;
-        bottom: 286px;
+        top: 118px;
         width: auto;
+        max-height: calc(100vh - 134px);
+      }
+      .companion-body {
+        max-height: calc(100vh - 214px);
+      }
+      .companion-toggle {
+        right: 12px;
+        top: 144px;
       }
     }
   </style>
 </head>
 <body>
   <div class="shell">
+    <aside class="left-widget">
+      <section class="quote-card">
+        <div class="quote-title">每日一句</div>
+        <div class="quote-text" id="dailyQuoteText"></div>
+        <div class="quote-tip">学习不用一次跑太快，关键是把思路走清楚。</div>
+      </section>
+      <section class="cube-card">
+        <div class="cube-title">无限进步魔方</div>
+        <div class="cube-scene" id="cubeScene">
+          <div class="cube">
+            <div class="cube-face front">无</div>
+            <div class="cube-face back">限</div>
+            <div class="cube-face right">进</div>
+            <div class="cube-face left">步</div>
+            <div class="cube-face top">无</div>
+            <div class="cube-face bottom">限</div>
+          </div>
+        </div>
+        <div class="cube-tip">魔方会在区域里缓慢游走，鼠标移上去会展开，提醒我们从不同角度拆题、持续进步。</div>
+      </section>
+    </aside>
+
     <header class="topbar">
       <div>
         <div id="pageTitle" style="font-size:1.5rem;font-weight:700;"></div>
         <div id="pageSubtitle" class="muted"></div>
       </div>
-      <a href="student_hub.html" id="backLink"></a>
+      <a href="student_hub.html" id="backLink" data-nav-back="true"></a>
     </header>
 
     <section class="hero">
@@ -279,6 +509,7 @@
     <div class="companion-header" id="companionHeader">
       <div class="companion-title-wrap">
         <h3 id="companionTitle"></h3>
+        <div class="companion-drag-hint" id="companionDragHint"></div>
       </div>
       <div class="companion-header-actions">
         <button class="icon-btn" id="minimizeCompanionBtn" type="button" title="toggle">-</button>
@@ -304,14 +535,22 @@
         <button class="btn secondary" id="toggleVoiceBtn" type="button"></button>
         <button class="btn secondary" id="replayVoiceBtn" type="button"></button>
       </div>
+      <div class="companion-footer">
+        <button class="btn secondary" id="hideCompanionBtn" type="button"></button>
+      </div>
     </div>
   </aside>
+  <button class="companion-toggle" id="showCompanionBtn" type="button"></button>
 
   <script>
     const TEXT = {
       pageTitle: "\u81ea\u9002\u5e94\u8f85\u5bfc\u5de5\u4f5c\u53f0",
       pageSubtitle: "\u5df2\u63a5\u5165\u4e91\u7aef\u8f85\u5bfc\u63a5\u53e3\uff0c\u652f\u6301 AG3 \u89c4\u5212\u3001AG3 \u8f85\u5bfc\u3001AG4 \u641c\u96c6\u4e0e Reflexion \u53cd\u601d\u73af\u8def\u3002",
       backLink: "\u8fd4\u56de\u529f\u80fd\u603b\u89c8",
+      quoteTitle: "\u6bcf\u65e5\u4e00\u53e5",
+      quoteTip: "\u5b66\u4e60\u4e0d\u7528\u4e00\u6b21\u8dd1\u592a\u5feb\uff0c\u5173\u952e\u662f\u628a\u601d\u8def\u8d70\u6e05\u695a\u3002",
+      cubeTitle: "\u65e0\u9650\u8fdb\u6b65\u9b54\u65b9",
+      cubeTip: "\u9b54\u65b9\u4f1a\u5728\u533a\u57df\u91cc\u7f13\u6162\u6e38\u8d70\uff0c\u9f20\u6807\u79fb\u4e0a\u53bb\u4f1a\u5c55\u5f00\uff0c\u63d0\u9192\u6211\u4eec\u4ece\u4e0d\u540c\u89d2\u5ea6\u62c6\u9898\u3001\u6301\u7eed\u8fdb\u6b65\u3002",
       heroTitle: "\u89c4\u5212\u9a71\u52a8\u7684\u591a\u8f6e\u8f85\u5bfc",
       heroText: "\u9875\u9762\u4f1a\u81ea\u52a8\u5e26\u5165\u6700\u8fd1\u4e00\u6b21\u5b66\u4e60\u89c4\u5212\u4e0e\u5b66\u751f\u8131\u654f\u753b\u50cf\u3002\u9996\u6b21\u8fdb\u5165\u65f6\u4f1a\u5411\u4e91\u7aef\u53d1\u8d77\u4e00\u8f6e\u521d\u59cb\u5316\uff0c\u8ba9 AG3 \u5148\u5efa\u7acb\u5f53\u524d\u4f1a\u8bdd\u7684\u6559\u5b66\u89c4\u5212\uff0c\u518d\u8fdb\u5165\u540e\u7eed\u8f85\u5bfc\u3002",
       labelTopic: "\u5f53\u524d\u4e3b\u9898",
@@ -369,6 +608,13 @@
       companionWidgetLoading: "Live2D \u52a0\u8f7d\u4e2d",
       companionWidgetReady: "Live2D \u5df2\u5c31\u7eea",
       companionWidgetFailed: "Live2D \u52a0\u8f7d\u5931\u8d25",
+      waifuTipsDragHint: "\u53ef\u4ee5\u62d6\u52a8\u8fd9\u4e2a\u5bf9\u8bdd\u6846\uff0c\u907f\u514d\u6321\u4f4f\u9875\u9762\u6309\u94ae\u3002",
+      waifuTipsClose: "\u5173\u95ed\u5f53\u524d\u6c14\u6ce1",
+      companionDragHint: "\u6309\u4f4f\u8fd9\u4e00\u884c\u53ef\u4ee5\u62d6\u52a8\u9762\u677f",
+      companionShow: "\u6253\u5f00\u8bed\u97f3\u9762\u677f",
+      companionShowShort: "\u8bed\u97f3\u83dc\u5355",
+      companionHidden: "\u8bed\u97f3\u9762\u677f\u5df2\u9690\u85cf\uff0c\u53ef\u4ece\u53f3\u4fa7\u6309\u94ae\u91cd\u65b0\u6253\u5f00\u3002",
+      companionHideBtn: "\u6536\u8d77\u83dc\u5355",
       voiceLabel: "\u8bed\u97f3\u97f3\u8272",
       voiceNoSupport: "\u5f53\u524d\u672a\u914d\u7f6e\u53ef\u7528\u7684\u8baf\u98de\u97f3\u8272",
       emotionLabel: "\u64ad\u62a5\u98ce\u683c",
@@ -396,6 +642,71 @@
       { value: "xiaofeng", label: "\u8baf\u98de\u5c0f\u5cf0" },
       { value: "xiaomei", label: "\u8baf\u98de\u5c0f\u6885" }
     ];
+    const DAILY_QUOTES = [
+      "\u4eca\u5929\u7684\u96be\u9898\uff0c\u53ef\u4ee5\u5148\u62c6\u6210\u51e0\u4e2a\u5c0f\u95ee\u9898\u518d\u89e3\u3002",
+      "\u770b\u61c2\u4e00\u6b21\u4e0d\u7b97\u5b8c\u5168\u638c\u63e1\uff0c\u80fd\u81ea\u5df1\u8bb2\u51fa\u6765\u624d\u7b97\u771f\u6b63\u4f1a\u4e86\u3002",
+      "\u9047\u5230\u5361\u4f4f\u7684\u5730\u65b9\uff0c\u5148\u4e0d\u8981\u6025\u7740\u8df3\u6b65\uff0c\u628a\u6761\u4ef6\u91cd\u65b0\u6574\u7406\u4e00\u904d\u3002",
+      "\u6709\u4e9b\u9898\u96be\u5728\u5165\u53e3\uff0c\u627e\u5230\u7b2c\u4e00\u6b65\uff0c\u540e\u9762\u5f80\u5f80\u4f1a\u987a\u8d77\u6765\u3002",
+      "\u60f3\u5f97\u6162\u4e00\u70b9\u4e5f\u6ca1\u5173\u7cfb\uff0c\u7406\u89e3\u6bd4\u5355\u7eaf\u505a\u5bf9\u66f4\u91cd\u8981\u3002",
+      "\u590d\u76d8\u4e0d\u662f\u91cd\u590d\uff0c\u800c\u662f\u628a\u9519\u8bef\u53d8\u6210\u4e0b\u4e00\u6b21\u66f4\u7a33\u7684\u57fa\u7840\u3002",
+      "\u5982\u679c\u4e00\u9053\u9898\u6709\u70b9\u7ed5\uff0c\u53ef\u4ee5\u5148\u753b\u56fe\u3001\u5217\u8868\u6216\u8005\u5199\u51fa\u5df2\u77e5\u6761\u4ef6\u3002"
+    ];
+    const EDU_WAIFU_TIPS = {
+      mouseover: [
+        { selector: "#waifu-tool-switch-model", text: ["\u60f3\u6362\u4e2a\u5f62\u8c61\u7ee7\u7eed\u5b66\u4e60\u5417\uff1f", "\u8c03\u6574\u4e00\u4e0b\u770b\u677f\u5a18\uff0c\u6211\u4eec\u7ee7\u7eed\u8bb2\u9898\u3002"] },
+        { selector: "#waifu-tool-switch-texture", text: ["\u60f3\u770b\u770b\u4e0d\u540c\u7684\u9020\u578b\u5417\uff1f", "\u653e\u677e\u4e00\u4e0b\uff0c\u4f46\u522b\u5fd8\u4e86\u4eca\u5929\u7684\u5b66\u4e60\u76ee\u6807\u3002"] },
+        { selector: "#waifu-tool-photo", text: ["\u8981\u7559\u4e0b\u4eca\u5929\u7684\u5b66\u4e60\u7eaa\u5f55\u5417\uff1f", "\u62cd\u7167\u4e4b\u524d\uff0c\u5148\u628a\u8fd9\u9053\u9898\u60f3\u6e05\u695a\u5427\u3002"] },
+        { selector: "#waifu-tool-info", text: ["\u60f3\u4e86\u89e3\u6211\u7684\u529f\u80fd\u5417\uff1f", "\u6211\u53ef\u4ee5\u966a\u4f60\u4e00\u8d77\u542c AG3 \u7684\u8f85\u5bfc\u56de\u590d\u3002"] },
+        { selector: "#waifu-tool-quit", text: ["\u8981\u6697\u85cf\u6211\u5417\uff1f\u8bb0\u5f97\u4f1a\u6765\u7ee7\u7eed\u5b66\u4e60\u54e6\u3002", "\u6682\u65f6\u79bb\u5f00\u4e5f\u6ca1\u5173\u7cfb\uff0c\u56de\u6765\u6211\u4eec\u7ee7\u7eed\u8bb2\u9898\u3002"] }
+      ],
+      click: [
+        { selector: "#waifu", text: ["\u8fd9\u9053\u9898\u5982\u679c\u8fd8\u6ca1\u60f3\u660e\u767d\uff0c\u53ef\u4ee5\u518d\u95ee\u6211\u4eec\u4e00\u904d\u3002", "\u522b\u7740\u6025\uff0c\u96be\u70b9\u53ef\u4ee5\u4e00\u5c42\u4e00\u5c42\u62c6\u5f00\u3002"] }
+      ],
+      seasons: [
+        { date: "09/10", text: "\u4eca\u5929\u662f\u6559\u5e08\u8282\uff0c\u8bb0\u5f97\u5411\u8001\u5e08\u95ee\u597d\uff0c\u4e5f\u522b\u5fd8\u8ba4\u771f\u5b66\u4e60\u3002" }
+      ],
+      time: [
+        { hour: "6-8", text: "\u65e9\u4e0a\u597d\uff0c\u5148\u7528\u4e00\u9053\u7b80\u5355\u9898\u628a\u72b6\u6001\u627e\u56de\u6765\u5427\u3002" },
+        { hour: "9-11", text: "\u4e0a\u5348\u9002\u5408\u653b\u514b\u91cd\u70b9\u77e5\u8bc6\uff0c\u6211\u4eec\u6309\u8ba1\u5212\u5f80\u524d\u63a8\u8fdb\u3002" },
+        { hour: "12-14", text: "\u4e2d\u5348\u53ef\u4ee5\u5148\u590d\u76d8\u4e00\u4e0b\u4e0a\u5348\u7684\u9519\u9898\uff0c\u4e0d\u7528\u592a\u8d76\u3002" },
+        { hour: "15-18", text: "\u4e0b\u5348\u662f\u8003\u9a8c\u8010\u5fc3\u7684\u65f6\u95f4\uff0c\u6162\u4e00\u70b9\u4e5f\u53ef\u4ee5\u628a\u9898\u76ee\u5403\u900f\u3002" },
+        { hour: "19-21", text: "\u665a\u4e0a\u597d\uff0c\u53ef\u4ee5\u7528\u4e00\u8f6e\u8f85\u5bfc\u5bf9\u8bdd\u628a\u4eca\u5929\u7684\u96be\u70b9\u7406\u987a\u3002" },
+        { hour: "22-23", text: "\u5df2\u7ecf\u4e0d\u65e9\u4e86\uff0c\u505a\u5b8c\u8fd9\u9898\u5c31\u53ef\u4ee5\u51c6\u5907\u4f11\u606f\u5566\u3002" },
+        { hour: "0-5", text: "\u8fd9\u4e2a\u65f6\u95f4\u8fd8\u5728\u5b66\u4e60\u5f88\u62fc\uff0c\u4f46\u4e5f\u8981\u6ce8\u610f\u4f5c\u606f\u3002" }
+      ],
+      message: {
+        default: [
+          "\u6b22\u8fce\u56de\u6765\uff0c\u6211\u4eec\u7ee7\u7eed\u628a\u4eca\u5929\u7684\u9898\u76ee\u5f04\u660e\u767d\u3002",
+          "\u8fd9\u9053\u9898\u96be\u4e0d\u96be\uff1f\u53ef\u4ee5\u628a\u5361\u4f4f\u7684\u5730\u65b9\u544a\u8bc9\u6211\u3002",
+          "\u5148\u522b\u7740\u6025\uff0c\u6211\u4eec\u6309\u6b65\u9aa4\u628a\u601d\u8def\u987a\u4e00\u904d\u3002",
+          "\u4eca\u5929\u7684\u5b66\u4e60\u8fdb\u5c55\u8fd8\u4e0d\u9519\uff0c\u8981\u4e0d\u8981\u518d\u7ec3\u4e00\u9898\uff1f",
+          "\u6709\u4e0d\u61c2\u7684\u5c31\u76f4\u63a5\u95ee\uff0c\u6211\u4eec\u4ee5\u641e\u61c2\u4e3a\u76ee\u6807\u3002"
+        ],
+        console: "\u4f60\u6253\u5f00\u4e86\u63a7\u5236\u53f0\uff0c\u8981\u4e0d\u8981\u987a\u4fbf\u68c0\u67e5\u4e00\u4e0b\u4eca\u5929\u7684\u8c03\u8bd5\u72b6\u6001\uff1f",
+        copy: "\u590d\u5236\u5185\u5bb9\u65f6\u8bb0\u5f97\u4e5f\u8981\u7406\u89e3\u601d\u8def\uff0c\u8fd9\u6837\u66f4\u6709\u5e2e\u52a9\u3002",
+        visibilitychange: "\u4f60\u56de\u6765\u5566\uff0c\u6211\u4eec\u7ee7\u7eed\u628a\u9898\u76ee\u8bb2\u6e05\u695a\u3002",
+        changeSuccess: "\u6362\u4e2a\u5f62\u8c61\u7ee7\u7eed\u5b66\uff0c\u4fdd\u6301\u597d\u5fc3\u60c5\u4e5f\u5f88\u91cd\u8981\u3002",
+        changeFail: "\u8fd9\u4e2a\u9020\u578b\u6682\u65f6\u6ca1\u6709\u5207\u6362\u6210\u529f\uff0c\u4e0d\u8fc7\u6211\u8fd8\u5728\u8fd9\u91cc\u966a\u4f60\u3002",
+        photo: "\u622a\u56fe\u7559\u5ff5\u4e5f\u597d\uff0c\u4f46\u522b\u5fd8\u4e86\u4eca\u5929\u7684\u5b66\u4e60\u4efb\u52a1\u3002",
+        goodbye: "\u8fd9\u4e00\u8f6e\u5148\u5230\u8fd9\u91cc\uff0c\u4e0b\u6b21\u6211\u4eec\u7ee7\u7eed\u628a\u96be\u70b9\u62ff\u4e0b\u3002",
+        welcome: "\u6b22\u8fce\u6765\u5230\u300c$1\u300d\uff0c\u5148\u770b\u770b\u4eca\u5929\u7684\u5b66\u4e60\u76ee\u6807\u5427\u3002",
+        referrer: "\u6b22\u8fce\u6765\u5230\u8f85\u5bfc\u5de5\u4f5c\u53f0\uff0c\u6211\u4eec\u4e00\u8d77\u628a\u95ee\u9898\u62c6\u5f00\u6765\u5b66\u3002",
+        hoverBody: [
+          "\u6211\u5728\u8fd9\u91cc\u966a\u4f60\u542c\u9898\uff0c\u6709\u95ee\u9898\u5c31\u63d0\u51fa\u6765\u3002",
+          "\u5148\u522b\u7740\u6025\uff0c\u76f4\u63a5\u8bf4\u8bf4\u4f60\u54ea\u4e00\u6b65\u5361\u4f4f\u4e86\u3002",
+          "\u5f53\u524d\u662f\u5b66\u4e60\u573a\u666f\uff0c\u6211\u4eec\u5c3d\u91cf\u628a\u6ce8\u610f\u529b\u653e\u5728\u9898\u76ee\u4e0a\u3002"
+        ],
+        tapBody: [
+          "\u8981\u4e0d\u8981\u8bd5\u7740\u518d\u628a\u9898\u76ee\u6761\u4ef6\u590d\u8ff0\u4e00\u904d\uff1f",
+          "\u8fd9\u4e00\u9898\u53ef\u4ee5\u5206\u6210\u51e0\u6b65\uff0c\u6211\u4eec\u4e0d\u7528\u4e00\u6b21\u5168\u60f3\u5b8c\u3002",
+          "\u6709\u70b9\u96be\u4e5f\u6ca1\u5173\u7cfb\uff0c\u6211\u4eec\u628a\u5b83\u53d8\u6210\u66f4\u5c0f\u7684\u6b65\u9aa4\u3002"
+        ]
+      },
+      models: [
+        { name: "Potion-Maker/Pio", paths: ["https://fastly.jsdelivr.net/gh/fghrsh/live2d_api/model/Potion-Maker/Pio/index.json"], message: "\u8fd9\u662f\u4eca\u5929\u966a\u4f60\u542c\u9898\u7684\u5b66\u4e60\u52a9\u624b\u3002" },
+        { name: "Potion-Maker/Tia", paths: ["https://fastly.jsdelivr.net/gh/fghrsh/live2d_api/model/Potion-Maker/Tia/index.json"], message: "\u6362\u4e86\u4e00\u4f4d\u5b66\u4e60\u52a9\u624b\uff0c\u6211\u4eec\u7ee7\u7eed\u3002" }
+      ]
+    };
     const PLANNING_KEY = "eduMasPlanningResult";
     const DIAGNOSIS_KEY = "eduMasDiagnosisResult";
     const SESSION_KEY = "eduMasTutoringSession";
@@ -442,14 +753,23 @@
     const initBtn = document.getElementById("initBtn");
     const clearBtn = document.getElementById("clearBtn");
     const statusText = document.getElementById("statusText");
+    const dailyQuoteText = document.getElementById("dailyQuoteText");
+    const quoteTitle = document.querySelector(".quote-title");
+    const quoteTip = document.querySelector(".quote-tip");
+    const cubeTitle = document.querySelector(".cube-title");
+    const cubeTip = document.querySelector(".cube-tip");
+    const cubeFaces = Array.from(document.querySelectorAll(".cube-face"));
     const companionPanel = document.getElementById("companionPanel");
     const companionHeader = document.getElementById("companionHeader");
     const companionBody = document.getElementById("companionBody");
     const companionTitle = document.getElementById("companionTitle");
+    const companionDragHint = document.getElementById("companionDragHint");
     const companionStatus = document.getElementById("companionStatus");
     const companionPreview = document.getElementById("companionPreview");
     const minimizeCompanionBtn = document.getElementById("minimizeCompanionBtn");
     const closeCompanionBtn = document.getElementById("closeCompanionBtn");
+    const hideCompanionBtn = document.getElementById("hideCompanionBtn");
+    const showCompanionBtn = document.getElementById("showCompanionBtn");
     const toggleVoiceBtn = document.getElementById("toggleVoiceBtn");
     const replayVoiceBtn = document.getElementById("replayVoiceBtn");
     const voiceStateChip = document.getElementById("voiceStateChip");
@@ -459,18 +779,31 @@
     const emotionLabel = document.getElementById("emotionLabel");
     const emotionSelect = document.getElementById("emotionSelect");
 
+    quoteTitle.textContent = TEXT.quoteTitle;
+    quoteTip.textContent = TEXT.quoteTip;
+    cubeTitle.textContent = TEXT.cubeTitle;
+    cubeTip.textContent = TEXT.cubeTip;
+    ["\u65e0", "\u9650", "\u8fdb", "\u6b65", "\u65e0", "\u9650"].forEach((text, index) => {
+      if (cubeFaces[index]) {
+        cubeFaces[index].textContent = text;
+      }
+    });
+
     topicText.textContent = TEXT.notRead;
     phaseText.textContent = TEXT.notInit;
     llmModeText.textContent = TEXT.notCalled;
     ag4Context.textContent = TEXT.noAg4;
     reflectionPad.textContent = TEXT.noReflection;
     companionTitle.textContent = TEXT.companionTitle;
+    companionDragHint.textContent = TEXT.companionDragHint;
     companionStatus.textContent = `${TEXT.companionIdle} ${TEXT.companionFallback}`;
     companionPreview.textContent = TEXT.companionWaiting;
     replayVoiceBtn.textContent = TEXT.companionReplay;
     voiceLabel.textContent = TEXT.voiceLabel;
     emotionLabel.textContent = TEXT.emotionLabel;
     minimizeCompanionBtn.textContent = "-";
+    showCompanionBtn.textContent = TEXT.companionShowShort;
+    hideCompanionBtn.textContent = TEXT.companionHideBtn;
 
     const sessionId = (profile?.role || "student") + "_" + (profile?.displayName || "guest") + "_tutoring";
     const fallbackTopic = planningResult?.planning_path?.[0]?.objective || "Matrix Multiplication";
@@ -485,6 +818,12 @@
     let draggingCompanion = false;
     let dragOffsetX = 0;
     let dragOffsetY = 0;
+    let companionHidden = true;
+    let draggingWaifuTips = false;
+    let activeWaifuTips = null;
+    let waifuTipsOffsetX = 0;
+    let waifuTipsOffsetY = 0;
+    const waifuTipsUrl = URL.createObjectURL(new Blob([JSON.stringify(EDU_WAIFU_TIPS)], { type: "application/json" }));
 
     function buildSanitizedProfile() {
       if (diagnosisResult && typeof diagnosisResult === "object") {
@@ -495,6 +834,11 @@
         weakness_tags: ["dimension_mismatch", "calculation_carelessness"],
         stress_level: "Medium"
       };
+    }
+
+    function renderDailyQuote() {
+      const dayIndex = Math.abs(Math.floor(Date.now() / 86400000)) % DAILY_QUOTES.length;
+      dailyQuoteText.textContent = DAILY_QUOTES[dayIndex];
     }
 
     function updateRiskUi() {
@@ -575,6 +919,21 @@
       companionPanel.classList.toggle("minimized", companionMinimized);
       minimizeCompanionBtn.textContent = companionMinimized ? "+" : "-";
       minimizeCompanionBtn.title = companionMinimized ? TEXT.companionExpand : TEXT.companionMinimize;
+      companionPanel.style.display = companionHidden ? "none" : "block";
+      showCompanionBtn.classList.toggle("visible", companionHidden);
+    }
+
+    function placeCompanionInSafeArea() {
+      const maxLeft = Math.max(8, window.innerWidth - companionPanel.offsetWidth - 8);
+      const maxTop = Math.max(8, window.innerHeight - companionPanel.offsetHeight - 8);
+      const currentLeft = companionPanel.style.left ? Number.parseFloat(companionPanel.style.left) : null;
+      const currentTop = companionPanel.style.top ? Number.parseFloat(companionPanel.style.top) : null;
+      const safeLeft = Math.min(maxLeft, Math.max(8, currentLeft ?? (window.innerWidth - companionPanel.offsetWidth - 18)));
+      const safeTop = Math.min(maxTop, Math.max(96, currentTop ?? 136));
+      companionPanel.style.left = `${safeLeft}px`;
+      companionPanel.style.top = `${safeTop}px`;
+      companionPanel.style.right = "auto";
+      companionPanel.style.bottom = "auto";
     }
 
     function startCompanionDrag(event) {
@@ -600,6 +959,69 @@
 
     function stopCompanionDrag() {
       draggingCompanion = false;
+    }
+
+    function startWaifuTipsDrag(event) {
+      const tipsNode = event.currentTarget;
+      if (event.target.closest(".waifu-tips-close")) {
+        return;
+      }
+      draggingWaifuTips = true;
+      activeWaifuTips = tipsNode;
+      const rect = tipsNode.getBoundingClientRect();
+      waifuTipsOffsetX = event.clientX - rect.left;
+      waifuTipsOffsetY = event.clientY - rect.top;
+      tipsNode.style.left = `${rect.left}px`;
+      tipsNode.style.top = `${rect.top}px`;
+      tipsNode.style.right = "auto";
+      tipsNode.style.bottom = "auto";
+      event.preventDefault();
+    }
+
+    function moveWaifuTips(event) {
+      if (!draggingWaifuTips || !activeWaifuTips) {
+        return;
+      }
+      const nextLeft = Math.max(8, Math.min(window.innerWidth - activeWaifuTips.offsetWidth - 8, event.clientX - waifuTipsOffsetX));
+      const nextTop = Math.max(8, Math.min(window.innerHeight - activeWaifuTips.offsetHeight - 8, event.clientY - waifuTipsOffsetY));
+      activeWaifuTips.style.left = `${nextLeft}px`;
+      activeWaifuTips.style.top = `${nextTop}px`;
+    }
+
+    function stopWaifuTipsDrag() {
+      draggingWaifuTips = false;
+      activeWaifuTips = null;
+    }
+
+    function enhanceWaifuTips() {
+      const tipsNode = document.querySelector(".waifu-tips");
+      if (!tipsNode || tipsNode.dataset.eduEnhanced === "true") {
+        return;
+      }
+      tipsNode.dataset.eduEnhanced = "true";
+      tipsNode.title = TEXT.waifuTipsDragHint;
+      if (!tipsNode.querySelector(".waifu-tips-close")) {
+        const closeBtn = document.createElement("button");
+        closeBtn.type = "button";
+        closeBtn.className = "waifu-tips-close";
+        closeBtn.textContent = "×";
+        closeBtn.title = TEXT.waifuTipsClose;
+        closeBtn.addEventListener("click", (event) => {
+          event.stopPropagation();
+          tipsNode.style.display = "none";
+        });
+        tipsNode.appendChild(closeBtn);
+      }
+      tipsNode.addEventListener("pointerdown", startWaifuTipsDrag);
+    }
+
+    function restoreWaifuTips() {
+      const tipsNode = document.querySelector(".waifu-tips");
+      if (!tipsNode) {
+        return;
+      }
+      tipsNode.style.display = "";
+      enhanceWaifuTips();
     }
 
     function sanitizeSpeechText(text) {
@@ -749,6 +1171,7 @@
     }
 
     async function syncCompanionWithResult(result) {
+      restoreWaifuTips();
       const latestReply = sanitizeSpeechText(result?.tutor_reply || "");
       if (latestReply) {
         await speakReply(latestReply);
@@ -776,7 +1199,7 @@
             return;
           }
           window.initWidget({
-            waifuPath: "https://fastly.jsdelivr.net/npm/live2d-widgets@1/dist/waifu-tips.json",
+            waifuPath: waifuTipsUrl,
             cubism2Path: "https://fastly.jsdelivr.net/npm/live2d-widgets@1/dist/live2d.min.js",
             modelId: 1,
             tools: ["switch-model", "switch-texture", "photo", "info", "quit"],
@@ -791,6 +1214,7 @@
             waifuNode.style.right = "12px";
             waifuNode.style.bottom = "-6px";
           }
+          restoreWaifuTips();
         };
         tryInit();
       };
@@ -944,8 +1368,20 @@
       refreshCompanionPanelState();
     });
     closeCompanionBtn.addEventListener("click", () => {
-      companionPanel.style.display = "none";
-      setStatus(TEXT.companionClosed, "ok");
+      companionHidden = true;
+      refreshCompanionPanelState();
+      setStatus(TEXT.companionHidden, "ok");
+    });
+    showCompanionBtn.addEventListener("click", () => {
+      companionHidden = false;
+      refreshCompanionPanelState();
+      placeCompanionInSafeArea();
+      setStatus(TEXT.companionExpand, "ok");
+    });
+    hideCompanionBtn.addEventListener("click", () => {
+      companionHidden = true;
+      refreshCompanionPanelState();
+      setStatus(TEXT.companionHidden, "ok");
     });
     replayVoiceBtn.addEventListener("click", () => {
       if (lastSpokenReply) {
@@ -973,6 +1409,13 @@
     });
     window.addEventListener("pointermove", moveCompanion);
     window.addEventListener("pointerup", stopCompanionDrag);
+    window.addEventListener("pointermove", moveWaifuTips);
+    window.addEventListener("pointerup", stopWaifuTipsDrag);
+    window.addEventListener("resize", () => {
+      if (!companionHidden) {
+        placeCompanionInSafeArea();
+      }
+    });
     messageInput.addEventListener("keydown", (event) => {
       if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
         sendMessage();
@@ -987,7 +1430,14 @@
 
     refreshCompanionChips();
     refreshCompanionPanelState();
+    if (!companionHidden) {
+      placeCompanionInSafeArea();
+    }
+    renderDailyQuote();
     setupLive2DWidget();
+    new MutationObserver(() => {
+      enhanceWaifuTips();
+    }).observe(document.body, { childList: true, subtree: true });
     updateRiskUi();
     renderPlanning();
     if (!restoreSession()) {

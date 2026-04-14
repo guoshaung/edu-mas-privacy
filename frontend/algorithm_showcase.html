@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>算法展示页</title>
+  <script src="./auth.js" data-required-role="student"></script>
+  <script>
+    window.MathJax = {
+      tex: {
+        inlineMath: [['\\(', '\\)']],
+        displayMath: [['\\[', '\\]']]
+      },
+      svg: {
+        fontCache: 'global'
+      }
+    };
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f5f8fc;
+      --panel: #ffffff;
+      --line: #dde7f3;
+      --text: #1f2a44;
+      --muted: #6f809f;
+      --primary: #2f80ed;
+      --primary-soft: #edf5ff;
+      --accent: #17a673;
+      --accent-soft: #edfdf7;
+      --warn: #b46916;
+      --warn-soft: #fff7eb;
+      --violet: #6d49c6;
+      --violet-soft: #f4f1ff;
+      --shadow: 0 18px 48px rgba(35, 57, 93, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at top right, rgba(47, 128, 237, 0.08), transparent 24%),
+        linear-gradient(180deg, #f7faff 0%, #f5f8fc 100%);
+      color: var(--text);
+      font-family: "Noto Sans SC", sans-serif;
+    }
+    .shell {
+      width: min(1360px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 22px 0 36px;
+    }
+    .menu-bar, .hero, .section-card, .metric-card, .algo-card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: var(--shadow);
+    }
+    .menu-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 18px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+    .menu-links {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .menu-link {
+      display: inline-flex;
+      align-items: center;
+      padding: 10px 14px;
+      border-radius: 999px;
+      text-decoration: none;
+      font-weight: 700;
+      color: var(--primary);
+      background: var(--primary-soft);
+    }
+    .menu-link.active {
+      background: #1f2a44;
+      color: #fff;
+    }
+    .menu-tip {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: #f6f8fc;
+      color: var(--muted);
+      font-weight: 700;
+    }
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-size: 0.86rem;
+      font-weight: 800;
+    }
+    .hero {
+      padding: 26px;
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 18px;
+      margin-bottom: 18px;
+      background:
+        radial-gradient(circle at top left, rgba(47, 128, 237, 0.12), transparent 24%),
+        radial-gradient(circle at bottom right, rgba(23, 166, 115, 0.10), transparent 20%),
+        linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
+    }
+    .hero h1 {
+      margin: 12px 0 0;
+      font-size: clamp(2rem, 3vw, 2.9rem);
+      line-height: 1.12;
+      max-width: 12ch;
+    }
+    .muted { color: var(--muted); line-height: 1.8; }
+    .hero p { margin: 14px 0 0; }
+    .hero-metrics {
+      display: grid;
+      gap: 12px;
+    }
+    .metric-card {
+      padding: 16px;
+      background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+    }
+    .metric-card strong {
+      display: block;
+      margin-bottom: 8px;
+    }
+    .metric-card span {
+      display: block;
+      color: var(--primary);
+      font-size: 1.15rem;
+      font-weight: 800;
+    }
+    .section-card {
+      padding: 22px;
+      margin-top: 18px;
+    }
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+    .section-head h2 {
+      margin: 0;
+    }
+    .algo-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .algo-card {
+      padding: 18px;
+      background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+    }
+    .algo-card h3 {
+      margin: 0 0 10px;
+      font-size: 1.12rem;
+    }
+    .formula {
+      margin: 14px 0;
+      padding: 14px 16px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: #f8fbff;
+      font-size: 1rem;
+      line-height: 1.8;
+      overflow-x: auto;
+    }
+    .formula .MathJax {
+      font-size: 1.02rem !important;
+    }
+    .tag-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .tag-row span {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: #f4f8fe;
+      color: #35557f;
+      font-size: 0.82rem;
+      font-weight: 700;
+    }
+    .list {
+      margin: 0;
+      padding-left: 20px;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+    .joint-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 14px;
+    }
+    .policy-table {
+      display: grid;
+      gap: 10px;
+    }
+    .policy-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1.2fr;
+      gap: 10px;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #fbfdff;
+      align-items: center;
+    }
+    .policy-row strong {
+      color: #274165;
+    }
+    .legend-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+    .legend-item {
+      padding: 14px;
+      border-radius: 18px;
+      border: 1px solid var(--line);
+      background: #fbfdff;
+    }
+    .legend-item strong {
+      display: block;
+      margin-bottom: 8px;
+    }
+    @media (max-width: 1100px) {
+      .hero, .algo-grid, .joint-grid, .legend-grid {
+        grid-template-columns: 1fr;
+      }
+      .policy-row {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <nav class="menu-bar">
+      <div class="menu-links">
+        <a class="menu-link" href="student_hub.html">主页</a>
+        <a class="menu-link" href="student_profile.html">学生页面</a>
+        <a class="menu-link" href="srpg_demo.html">SRPG 双流演示页</a>
+        <a class="menu-link active" href="algorithm_showcase.html">算法展示</a>
+        <a class="menu-link" href="privacy_lab.html">隐私测试页</a>
+      </div>
+      <div class="menu-tip">隐私保护与版权保护算法总览</div>
+    </nav>
+
+    <section class="hero">
+      <div>
+        <span class="eyebrow">核心方法展示</span>
+        <h1>把隐私保护和版权保护的关键算法整理成一个能直接讲清的页面。</h1>
+        <p class="muted">这个页面把你的 SRPG 双流、动态隐私信任评估函数、动态版权合规评估函数以及联合决策策略收在一起，适合汇报和答辩时直接展开讲。</p>
+      </div>
+      <div class="hero-metrics">
+        <article class="metric-card">
+          <strong>隐私保护核心创新</strong>
+          <span>SRPG 双流融合</span>
+          <div class="muted">把学生原始输入拆成去敏流和逻辑流，兼顾隐私保护与教学可用性。</div>
+        </article>
+        <article class="metric-card">
+          <strong>版权保护核心创新</strong>
+          <span>动态版权合规评估</span>
+          <div class="muted">从版权敏感度、授权匹配、传播风险和暴露风险出发控制内容交付粒度。</div>
+        </article>
+        <article class="metric-card">
+          <strong>上层治理方式</strong>
+          <span>双评价函数联合决策</span>
+          <div class="muted">根据隐私信任值和版权风险值共同决定放行、摘要、替代生成或阻断。</div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section-card">
+      <div class="section-head">
+        <div>
+          <h2>隐私保护算法</h2>
+          <div class="muted">这一块把你的隐私保护思路按“核心创新 + 支撑机制 + 评价函数”拆开讲清楚。</div>
+        </div>
+        <span class="eyebrow">Privacy Side</span>
+      </div>
+      <div class="algo-grid">
+        <article class="algo-card">
+          <h3>1. SRPG 双流融合机制</h3>
+          <div class="muted">把学生原始输入拆成两条流：一条承担个体敏感特征的受控表达，一条承担教学任务真正需要的逻辑语义。</div>
+          <div class="tag-row">
+            <span>去敏流</span>
+            <span>逻辑流</span>
+            <span>差分隐私</span>
+            <span>多智能体受控读取</span>
+          </div>
+          <ul class="list" style="margin-top:12px;">
+            <li>去敏流保留桶化后的认知风格、压力水平、行为模式和支持强度。</li>
+            <li>逻辑流保留当前主题、问题摘要、语义焦点和辅导目标。</li>
+            <li>最终不同 Agent 读取不同组合，而不是统一读取一整份原始输入。</li>
+          </ul>
+        </article>
+
+        <article class="algo-card">
+          <h3>2. 动态隐私信任评估函数</h3>
+          <div class="formula">\[
+            T_{p}(t)=\alpha T_{\text{base}}-\beta D_{t}-\gamma R_{\text{gnn}}-\lambda E_{t}
+          \]</div>
+          <ul class="list">
+            <li><strong>\(T_{\text{base}}\)</strong>：初始隐私信任基线</li>
+            <li><strong>\(D_{t}\)</strong>：累计交互时长或会话持续时间</li>
+            <li><strong>\(R_{\text{gnn}}\)</strong>：FedGNN 计算得到的风险分数</li>
+            <li><strong>\(E_{t}\)</strong>：累计暴露强度，例如身份、行为、心理、画像字段的暴露量</li>
+          </ul>
+          <div class="tag-row">
+            <span>动态评估</span>
+            <span>FedGNN 驱动</span>
+            <span>控制开放粒度</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section-card">
+      <div class="section-head">
+        <div>
+          <h2>版权保护算法</h2>
+          <div class="muted">版权侧不强调单一检测模块，而是强调对多智能体资源流转过程的动态评估与治理。</div>
+        </div>
+        <span class="eyebrow">Copyright Side</span>
+      </div>
+      <div class="algo-grid">
+        <article class="algo-card">
+          <h3>3. 动态版权合规评估函数</h3>
+          <div class="formula">\[
+            C_{r}(t)=\mu R_{c}+\nu R_{a}+\xi R_{p}+\rho R_{e}+\sigma R_{i}
+          \]</div>
+          <ul class="list">
+            <li><strong>\(R_{c}\)</strong>：版权资源敏感度</li>
+            <li><strong>\(R_{a}\)</strong>：主体授权匹配风险</li>
+            <li><strong>\(R_{p}\)</strong>：多智能体传播风险</li>
+            <li><strong>\(R_{e}\)</strong>：内容暴露风险</li>
+            <li><strong>\(R_{i}\)</strong>：迭代累积风险</li>
+          </ul>
+          <div class="tag-row">
+            <span>动态版权风险</span>
+            <span>内容交付粒度控制</span>
+            <span>AG4 检索治理</span>
+          </div>
+        </article>
+
+        <article class="algo-card">
+          <h3>4. 支撑机制</h3>
+          <ul class="list">
+            <li><strong>ABAC</strong>：控制不同主体、不同阶段、不同资源类型的访问权限。</li>
+            <li><strong>FedGNN</strong>：根据通信时序、频率、载荷体积和语义分布给出风险输入。</li>
+            <li><strong>污点分析</strong>：跟踪版权标签在 AG4 → AG3 → 学生端之间的流动。</li>
+            <li><strong>水印与溯源</strong>：用于后续责任追踪，不是当前主线创新。</li>
+          </ul>
+          <div class="tag-row">
+            <span>ABAC</span>
+            <span>FedGNN</span>
+            <span>污点传播</span>
+            <span>溯源追踪</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="section-card">
+      <div class="section-head">
+        <div>
+          <h2>联合治理策略</h2>
+          <div class="muted">隐私保护和版权保护不是各自独立工作，而是最后在治理层一起决定系统交付方式。</div>
+        </div>
+        <span class="eyebrow">Joint Decision</span>
+      </div>
+      <div class="joint-grid">
+        <div class="policy-table">
+          <div class="policy-row">
+            <strong>高 T_p</strong>
+            <strong>低 C_r</strong>
+            <span>正常放行，允许完整教学交付</span>
+          </div>
+          <div class="policy-row">
+            <strong>低 T_p</strong>
+            <strong>低 C_r</strong>
+            <span>增强脱敏后放行，仅提供必要个体特征</span>
+          </div>
+          <div class="policy-row">
+            <strong>高 T_p</strong>
+            <strong>高 C_r</strong>
+            <span>不返原文，只给摘要或替代生成内容</span>
+          </div>
+          <div class="policy-row">
+            <strong>低 T_p</strong>
+            <strong>高 C_r</strong>
+            <span>阻断或最小必要返回，并记录治理日志</span>
+          </div>
+        </div>
+        <div class="algo-card">
+          <h3>一句话概括</h3>
+          <div class="muted">你的系统不是简单“加一个隐私模块”和“加一个版权模块”，而是在多智能体系统之上增加了一个联合治理层：</div>
+          <div class="formula">\[
+            \mathrm{Joint\ Policy}=F\!\left(T_{p}(t),\,C_{r}(t),\,\mathrm{phase},\,\mathrm{role},\,\mathrm{resource}\right)
+          \]</div>
+          <div class="muted">也就是说，系统最终是根据隐私信任、版权风险、当前阶段、主体角色和资源等级共同决定怎么交付内容。</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section-card">
+      <div class="section-head">
+        <div>
+          <h2>变量说明与答辩提示</h2>
+          <div class="muted">这部分更偏“讲解辅助”，方便你在汇报时快速切换话术。</div>
+        </div>
+        <span class="eyebrow">Presentation Notes</span>
+      </div>
+      <div class="legend-grid">
+        <div class="legend-item">
+          <strong>你可以怎么讲 SRPG</strong>
+          <div class="muted">SRPG 的意义不在于机械拆分，而在于把“教学任务需要的语义”与“学生个体敏感性”分开治理，并让不同 Agent 读取不同粒度的信息。</div>
+        </div>
+        <div class="legend-item">
+          <strong>你可以怎么讲 T_p(t)</strong>
+          <div class="muted">T_p(t) 不是一个静态常数，而是随着交互时长、行为模式变化和结构化风险变化动态更新的隐私信任值。</div>
+        </div>
+        <div class="legend-item">
+          <strong>你可以怎么讲 C_r(t)</strong>
+          <div class="muted">C_r(t) 不是只看资源本身，而是看资源在多智能体系统中的传播、暴露和多轮交互累积后的合规风险。</div>
+        </div>
+        <div class="legend-item">
+          <strong>你可以怎么讲联合治理</strong>
+          <div class="muted">隐私保护面向学生数据，版权保护面向教师资源，二者在治理层统一决策，保证系统既能教、又不会过度暴露。</div>
+        </div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>

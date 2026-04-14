@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from datetime import datetime
 from typing import Any, Literal
@@ -7,7 +7,7 @@ from uuid import uuid4
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from gateway.public_bank_store import load_bank, save_bank
+from gateway.public_bank_store import evaluate_student_access, load_bank, save_bank
 from gateway.tutoring_gateway import session_store
 
 
@@ -21,6 +21,17 @@ class TeacherResourceCreate(BaseModel):
     tags: list[str] = Field(default_factory=list)
     content: str = Field(..., min_length=1)
     source: str = "教师上传"
+    owner_teacher: str = "李四"
+    copyright_level: Literal[
+        "public_open",
+        "school_authorized",
+        "class_authorized",
+        "teacher_private",
+        "restricted_original",
+    ] = "school_authorized"
+    access_scope: Literal["public", "school", "class", "teacher_only"] = "school"
+    allow_fulltext_to_student: bool = False
+    allow_derivative_generation: bool = True
 
 
 def _now_text() -> str:
@@ -53,7 +64,7 @@ def _build_agent_cards(state: dict[str, Any]) -> list[dict[str, Any]]:
         {
             "agent": "AG4_ContentMiner",
             "status": "ready" if retrieved else "standby",
-            "summary": "按需从教师公共题库检索题目、教案和知识文档。",
+            "summary": "按需从教师公共题库检索题目、教案和知识文档，并受版权策略约束。",
         },
         {
             "agent": "AG5_AssessmentAgent",
@@ -68,10 +79,12 @@ async def teacher_summary() -> dict[str, Any]:
     bank = load_bank()
     active_sessions = len(session_store)
     ag4_ready = len(bank)
+    copyright_count = sum(1 for item in bank if item.get("copyright_level") != "public_open")
     return {
         "active_sessions": active_sessions,
         "resource_count": len(bank),
         "ag4_ready_count": ag4_ready,
+        "copyright_controlled_count": copyright_count,
         "updated_at": _now_text(),
     }
 
@@ -79,9 +92,10 @@ async def teacher_summary() -> dict[str, Any]:
 @router.get("/question-bank")
 async def get_question_bank() -> dict[str, Any]:
     items = load_bank()
+    enriched_items = [{**item, "delivery_policy": evaluate_student_access(item)} for item in items]
     return {
-        "total": len(items),
-        "items": items,
+        "total": len(enriched_items),
+        "items": enriched_items,
         "subjects": sorted({item.get("subject", "未分类") for item in items}),
     }
 
@@ -97,6 +111,11 @@ async def create_question_bank_item(payload: TeacherResourceCreate) -> dict[str,
         "tags": payload.tags,
         "content": payload.content,
         "source": payload.source,
+        "owner_teacher": payload.owner_teacher,
+        "copyright_level": payload.copyright_level,
+        "access_scope": payload.access_scope,
+        "allow_fulltext_to_student": payload.allow_fulltext_to_student,
+        "allow_derivative_generation": payload.allow_derivative_generation,
         "created_at": _now_text(),
     }
     items.insert(0, record)

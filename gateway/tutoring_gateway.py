@@ -15,7 +15,7 @@ from langgraph.graph import END, START, StateGraph
 from pydantic import BaseModel, Field
 
 from gateway.fedgnn_gateway import get_fedgnn_risk_score_for_session
-from gateway.public_bank_store import search_bank
+from gateway.public_bank_store import search_bank_for_student
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -166,8 +166,8 @@ def mock_planning_plan(state: SystemState) -> List[str]:
     topic = state.get("current_topic", "当前主题")
     return [
         f"先通过可视化材料建立 {topic} 的整体概念框架。",
-        f"再围绕易错点做分步练习与过程检查。",
-        f"最后用综合题完成迁移巩固并形成自我复盘。",
+        "再围绕易错点做分步练习与过程检查。",
+        "最后用综合题完成迁移巩固并形成自我复盘。",
     ]
 
 
@@ -211,13 +211,13 @@ def build_tutoring_prompt(state: SystemState) -> str:
 
     return (
         "你是 AG3_AdaptiveTutor，目前处于微观辅导阶段。\n"
-        "请结合 learning_plan、reflection_scratchpad 和 AG4 搜集内容进行辅导。\n"
+        "请结合 learning_plan、reflection_scratchpad 和 AG4 检索内容进行辅导。\n"
         "如果知识储备不足以回答，必须输出 need_ag4_search=true，并暂停生成辅导话术。\n"
         "输出严格 JSON:\n"
         "{\n"
         '  "tutor_reply": "本轮辅导话术，如果 need_ag4_search=true 则可以为空字符串",\n'
         '  "need_ag4_search": false,\n'
-        '  "search_query": "如需 AG4 搜索则提供检索关键词，否则为空"\n'
+        '  "search_query": "如需 AG4 检索则提供检索关键词，否则为空"\n'
         "}\n\n"
         f"当前主题: {state.get('current_topic', 'General Topic')}\n"
         f"学习规划:\n{plan_text}\n\n"
@@ -249,11 +249,47 @@ def mock_tutoring_output(state: SystemState) -> Dict[str, Any]:
     plan_focus = state.get("learning_plan", ["先建立概念框架"])[0]
     context_suffix = f" 我已经结合补充材料：{retrieved}" if retrieved else ""
     return {
-        "tutor_reply": f"我们先按当前规划的第一步来推进：{plan_focus}。你先试着说一说矩阵乘法里两个矩阵为什么不能随便相乘？{context_suffix}",
+        "tutor_reply": (
+            f"我们先按当前规划的第一步来推进：{plan_focus}。"
+            f"你先试着说一说矩阵乘法里两个矩阵为什么不能随便相乘？{context_suffix}"
+        ),
         "need_ag4_search": False,
         "search_query": "",
         "llm_mode": "mock",
     }
+
+def build_ag4_policy_context(item: Dict[str, Any], index: int) -> List[str]:
+    policy = item.get("delivery_policy", {})
+    decision = policy.get("decision", "summary_only")
+    reason = policy.get("reason", "未提供版权说明。")
+    visible = policy.get("student_visible_content", "")
+
+    return [
+        (
+            f"{index}. {item.get('title', '未命名资源')} | 学科: {item.get('subject', '未分类')} | "
+            f"类型: {item.get('resource_type', 'resource')}"
+        ),
+        (
+            f"   版权等级: {item.get('copyright_level', 'unknown')} | "
+            f"授权范围: {item.get('access_scope', 'unknown')} | "
+            f"交付策略: {decision}"
+        ),
+        f"   策略说明: {reason}",
+        f"   面向学生/AG3的可见内容: {visible}",
+        (
+            f"   教师策略提示: {policy.get('teacher_policy_hint', '未定义')} | "
+            f"允许原文: {item.get('allow_fulltext_to_student', False)} | "
+            f"允许衍生生成: {item.get('allow_derivative_generation', True)}"
+        ),
+    ]
+
+
+def should_force_ag4_search(state: SystemState) -> bool:
+    latest_message = str(state.get("latest_user_message", ""))
+    if not latest_message or state.get("ag4_retrieved_context"):
+        return False
+    trigger_keywords = ["变式", "例题", "更多题", "题库", "讲义", "资料", "原文"]
+    return any(keyword in latest_message for keyword in trigger_keywords)
 
 
 def ag3_tutoring_node(state: SystemState) -> SystemState:
@@ -279,6 +315,12 @@ def ag3_tutoring_node(state: SystemState) -> SystemState:
         search_query = mock_result["search_query"]
         llm_mode = mock_result["llm_mode"]
         llm_error = str(exc)
+
+    if should_force_ag4_search(state):
+        need_ag4_search = True
+        tutor_reply = ""
+        if not search_query:
+            search_query = f"{state.get('current_topic', '当前主题')} 变式题 讲义 题库"
 
     new_history = list(state.get("chat_history", []))
     if tutor_reply and not need_ag4_search:
@@ -328,6 +370,35 @@ def ag4_mining_node(state: SystemState) -> SystemState:
     }
 
 
+def ag4_mining_node(state: SystemState) -> SystemState:
+    query = state.get("search_query") or f"{state.get('current_topic', '当前主题')} 公共题库 变式题"
+    results = search_bank_for_student(query=query, topic=state.get("current_topic", ""), limit=3)
+
+    if results:
+        lines = [
+            f"[AG4 公共题库检索] 检索词: {query}",
+            "以下结果已经过版权字段判定，AG3 只能使用当前策略允许的内容粒度。",
+        ]
+        for index, item in enumerate(results, start=1):
+            lines.extend(build_ag4_policy_context(item, index))
+            tags = ", ".join(item.get("tags", [])) or "无标签"
+            lines.append(f"   标签: {tags}")
+        retrieved = "\n".join(lines)
+    else:
+        retrieved = (
+            f"[AG4 公共题库检索] 检索词: {query}\n"
+            "当前没有命中教师公共题库。请教师在题库管理页补充资料，并设置版权等级与授权范围。"
+        )
+
+    return {
+        **state,
+        "ag4_retrieved_context": retrieved,
+        "need_ag4_search": False,
+        "current_phase": "Tutoring",
+        "updated_at": timestamp_text(),
+    }
+
+
 def reflexion_evaluator_node(state: SystemState) -> SystemState:
     latest = state.get("latest_user_message", "")
     old_pad = state.get("reflection_scratchpad", "")
@@ -335,8 +406,8 @@ def reflexion_evaluator_node(state: SystemState) -> SystemState:
     triggers = ["听不懂", "不明白", "还是不会", "做错", "看不懂", "不会做", "又错了"]
     if any(token in latest for token in triggers):
         reflection = (
-            "Reflexion: 学生反馈持续存在理解障碍，需要下一轮辅导进一步降低抽象度，"
-            "优先回到规划中的基础步骤，增加视觉化解释和过程检查提示。"
+            "Reflexion: 学生反馈持续存在理解障碍，需要下一轮辅导进一步降低抽象度。"
+            "优先回到规划中的基础步骤，增加可视化解释和过程检查提示。"
         )
         if old_pad:
             reflection = old_pad + "\n" + reflection

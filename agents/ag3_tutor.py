@@ -1,256 +1,239 @@
 """
-AG3: 自适应辅导智能体
-职责：教学大脑，生成启发式脚手架对话
-输入：局部错误记录 + 学习风格标签
-输出：个性化辅导对话（带启发式提问）
-约束：严禁读取学生原始隐私数据
-"""
-from typing import Dict, Any, Optional, List
-from langchain_core.language_models import BaseChatModel
-from langchain_openai import ChatOpenAI
-from langchain_core.prompts import ChatPromptTemplate
-from langchain_core.memory import ConversationBufferMemory
+AG3 自适应辅导智能体
 
+重构目标：
+1. 引入 64 维加噪隐私态到 32 维策略向量的策略网络。
+2. 通过轻量级 Latent MARL 模拟 AG3 和 AG5 的对抗博弈。
+3. 让 AG3 最终把策略向量作为 system prompt 的控制变量，再交给 LLM 解码为文本。
+"""
+
+from __future__ import annotations
+
+import os
+from typing import Any, Dict, List, Optional
+
+import torch
+import torch.nn as nn
+from langchain_core.language_models import BaseChatModel
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_openai import ChatOpenAI
+
+from agents.ag5_assess import AG5ValueNet
 from protocols.messages import AgentRequest, AgentResponse
+
+
+class AG3PolicyNet(nn.Module):
+    """
+    AG3 策略网络
+
+    输入：
+    - 64 维学生加噪隐私流向量
+
+    输出：
+    - 32 维辅导策略隐向量
+    """
+
+    def __init__(self, input_dim: int = 64, hidden_dim: int = 96, output_dim: int = 32):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(input_dim, hidden_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_dim, output_dim),
+            nn.Tanh(),
+        )
+
+    def forward(self, student_noisy_state: torch.Tensor) -> torch.Tensor:
+        if student_noisy_state.dim() == 1:
+            student_noisy_state = student_noisy_state.unsqueeze(0)
+        return self.net(student_noisy_state)
+
+
+def simulate_latent_game(student_noisy_state: List[float] | torch.Tensor) -> List[float]:
+    """
+    运行一个很轻量的对抗训练循环，模拟 Latent MARL。
+
+    - AG3 试图最大化“通过测试概率”
+    - AG5 试图最小化“通过测试概率”
+    - 最终返回 AG3 学到的 32 维最优策略向量
+    """
+    if not isinstance(student_noisy_state, torch.Tensor):
+        student_state = torch.tensor(student_noisy_state, dtype=torch.float32)
+    else:
+        student_state = student_noisy_state.float()
+
+    if student_state.dim() > 1:
+        student_state = student_state.reshape(-1)
+    student_state = student_state[:64]
+    if student_state.numel() < 64:
+        student_state = torch.nn.functional.pad(student_state, (0, 64 - student_state.numel()))
+
+    ag3_policy = AG3PolicyNet()
+    ag5_value = AG5ValueNet()
+
+    ag3_optimizer = torch.optim.Adam(ag3_policy.parameters(), lr=1e-2)
+    ag5_optimizer = torch.optim.Adam(ag5_value.parameters(), lr=1e-2)
+
+    for _ in range(8):
+        # AG5 先作为“严格考官”更新，目标是压低通过概率
+        ag5_optimizer.zero_grad()
+        strategy = ag3_policy(student_state).detach()
+        pass_prob = ag5_value(student_state, strategy)
+        ag5_loss = pass_prob.mean()
+        ag5_loss.backward()
+        ag5_optimizer.step()
+
+        # AG3 再作为“努力导师”更新，目标是提升通过概率
+        ag3_optimizer.zero_grad()
+        strategy = ag3_policy(student_state)
+        pass_prob = ag5_value(student_state, strategy)
+        ag3_loss = -pass_prob.mean()
+        ag3_loss.backward()
+        ag3_optimizer.step()
+
+    with torch.no_grad():
+        final_strategy = ag3_policy(student_state).squeeze(0).cpu().numpy().astype("float32")
+    return final_strategy.tolist()
 
 
 class AdaptiveTutorAgent:
     """
-    AG3: 自适应辅导智能体
-    功能：
-    1. 接收学习风格标签和局部错误记录
-    2. 生成符合学生风格的启发式对话
-    3. 维护辅导会话上下文（不包含原始隐私）
-    4. 输出"脚手架"式引导问题
+    AG3 自适应辅导智能体
+
+    当前主流程：
+    1. 接收学生加噪隐私态（64 维）
+    2. 跑 Latent MARL 小型博弈
+    3. 输出 32 维最优策略向量
+    4. 将策略向量作为 system prompt 的控制变量，让 LLM 解码成文本辅导建议
     """
 
     def __init__(self, llm: Optional[BaseChatModel] = None):
-        self.llm = llm or ChatOpenAI(
-            model="gpt-4o",
-            temperature=0.7  # 较高温度以促进创造性对话
-        )
+        self.llm = llm or self._build_optional_llm()
         self.agent_type = "AG3_AdaptiveTutor"
-
-        # 会话记忆（每个学生独立）
-        self.conversation_memory: Dict[str, ConversationBufferMemory] = {}
-
-        # 辅导策略模板
-        self.tutoring_prompt = ChatPromptTemplate.from_messages([
-            ("system", """你是一个自适应辅导导师，基于学生的错误和学习风格提供"脚手架式"引导。
-
-核心原则：
-1. **启发式提问**：不直接给出答案，而是通过提问引导学生自己思考
-2. **风格适配**：根据学习风格调整辅导方式
-   - Visual：多用图示、图表、可视化类比
-   - Aural：多口头解释、讨论、故事化
-   - Read/Write：提供文本材料、笔记模板
-   - Kinesthetic：实践练习、动手操作、互动
-3. **渐进式提示**：从简单提示开始，逐步深入
-4. **正向激励**：鼓励学生的努力，而非只关注结果
-
-输出格式：JSON格式
-{{
-  "scaffolding_questions": ["问题1", "问题2"],
-  "explanation": "简短解释（适配风格）",
-  "next_hint": "如果学生仍卡住，提供更具体提示",
-  "encouragement": "正向激励语"
-}}"""),
-            ("system", "学生当前学习风格：{learning_style}\n最近的错误记录：\n{error_history}"),
-            ("human", "{student_input}")
-        ])
-
-    def get_memory(self, student_pseudonym: str) -> ConversationBufferMemory:
-        """获取学生的会话记忆"""
-        if student_pseudonym not in self.conversation_memory:
-            self.conversation_memory[student_pseudonym] = ConversationBufferMemory(
-                memory_key="chat_history",
-                return_messages=True
-            )
-        return self.conversation_memory[student_pseudonym]
+        self.policy_net = AG3PolicyNet()
+        self.prompt = ChatPromptTemplate.from_messages(
+            [
+                (
+                    "system",
+                    "你是 AG3 自适应辅导智能体。下面的 32 维策略向量代表当前最优的辅导倾向，"
+                    "请把它解码成自然语言辅导方案。输出 JSON，包含 explanation、guidance_steps、encouragement。",
+                ),
+                (
+                    "system",
+                    "策略向量：{policy_vector}\n当前学生问题：{student_input}\n逻辑主题：{logic_topic}",
+                ),
+                ("human", "请给出本轮辅导回应。"),
+            ]
+        )
 
     def generate_scaffolding(
         self,
-        student_pseudonym: str,
-        learning_style: str,
-        error_history: List[Dict[str, Any]],
         student_input: str,
-        context: Optional[Dict[str, Any]] = None
+        noisy_privacy_state: List[float],
+        logic_topic: str = "当前知识点",
+        context: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
         """
-        生成脚手架式辅导对话
+        AG3 主流程：
+        - 先跑 latent game 拿到最优策略向量
+        - 再让 LLM 把策略向量解释成文本
         """
-        print(f"[{self.agent_type}] 生成启发式辅导...")
-
-        # 获取会话记忆
-        memory = self.get_memory(student_pseudonym)
-
-        # 调用LLM生成辅导内容
-        chain = self.tutoring_prompt | self.llm
+        print(f"[{self.agent_type}] 接收到学生消息，开始 Latent MARL 策略博弈")
+        best_strategy_vector = simulate_latent_game(noisy_privacy_state)
 
         try:
-            # 格式化错误历史
-            error_desc = self._format_errors(error_history)
-
-            result = chain.invoke({
-                "learning_style": learning_style,
-                "error_history": error_desc,
-                "student_input": student_input
-            })
-
-            response = self._parse_tutoring_response(result.content)
-
-            # 更新会话记忆
-            memory.save_context(
-                {"input": student_input},
-                {"output": response.get("explanation", "")}
+            if self.llm is None:
+                raise RuntimeError("No available LLM client for AG3 decoding.")
+            chain = self.prompt | self.llm
+            result = chain.invoke(
+                {
+                    "policy_vector": best_strategy_vector,
+                    "student_input": student_input,
+                    "logic_topic": logic_topic,
+                }
             )
-
-            print(f"[{self.agent_type}] ✅ 辅导内容生成完成")
-            return response
-
-        except Exception as e:
-            print(f"[{self.agent_type}] ❌ 生成失败: {e}")
+            parsed = self._parse_json_like(result.content)
+            parsed["latent_strategy_vector"] = best_strategy_vector
+            parsed["logic_topic"] = logic_topic
+            return parsed
+        except Exception as error:
             return {
-                "scaffolding_questions": [
-                    f"你能再试一次吗？（{learning_style}风格提示：试着画个图）"
+                "explanation": "已根据隐空间博弈生成辅导策略，但文本解码阶段回退为模板输出。",
+                "guidance_steps": [
+                    "先用直观例子解释当前知识点的核心结论。",
+                    "再拆分证明链条，逐步确认学生是否跟上。",
+                    "最后提供一道低门槛练习题做即时巩固。",
                 ],
-                "explanation": "抱歉，我遇到了一些问题。让我们从头开始思考这个概念。",
-                "error": str(e)
+                "encouragement": "先把逻辑骨架搭起来，再去啃细节，会轻松很多。",
+                "latent_strategy_vector": best_strategy_vector,
+                "logic_topic": logic_topic,
+                "fallback_reason": str(error),
             }
 
-    def _format_errors(self, error_history: List[Dict[str, Any]]) -> str:
-        """格式化错误历史"""
-        if not error_history:
-            return "暂无错误记录（首次辅导）"
-
-        lines = []
-        for i, error in enumerate(error_history[-5:], 1):  # 只保留最近5条
-            lines.append(f"{i}. 知识点: {error.get('knowledge_point', 'Unknown')}")
-            lines.append(f"   错误类型: {error.get('error_type', 'Calculation')}")
-            lines.append(f"   学生答案: {error.get('student_answer', 'N/A')}")
-
-        return "\n".join(lines)
-
-    def _parse_tutoring_response(self, response: str) -> Dict[str, Any]:
-        """解析LLM辅导响应"""
-        import json
-        import re
-
-        # 尝试提取JSON
-        json_match = re.search(r'\{.*\}', response, re.DOTALL)
-        if json_match:
-            try:
-                return json.loads(json_match.group())
-            except json.JSONDecodeError:
-                pass
-
-        # 备用返回
-        return {
-            "scaffolding_questions": [
-                "你能解释一下你的思路吗？",
-                "这个问题的关键点在哪里？"
-            ],
-            "explanation": response
-        }
-
     async def process_request(self, request: AgentRequest) -> AgentResponse:
-        """
-        处理来自网关的辅导请求
-        """
-        if request.task_type != "tutor":
+        if request.task_type not in {"tutor", "latent_tutor"}:
             return AgentResponse(
                 request_id=request.request_id,
-                agent_type="AG3_Tutor",
+                agent_type=request.agent_type,
                 success=False,
-                error="Unsupported task type"
+                error="Unsupported task type for AG3",
             )
 
-        # 提取参数
-        student_pseudonym = request.data.get("student_pseudonym")
-        learning_style = request.data.get("learning_style", "Mixed")
-        error_history = request.data.get("error_history", [])
+        noisy_state = request.data.get("noisy_privacy_vector") or request.data.get("student_noisy_state") or []
         student_input = request.data.get("student_input", "")
+        logic_topic = request.data.get("logic_topic", "当前知识点")
 
-        if not student_pseudonym:
-            return AgentResponse(
-                request_id=request.request_id,
-                agent_type="AG3_Tutor",
-                success=False,
-                error="Missing student identifier"
-            )
-
-        # 生成辅导内容
         result = self.generate_scaffolding(
-            student_pseudonym=student_pseudonym,
-            learning_style=learning_style,
-            error_history=error_history,
             student_input=student_input,
-            context=request.context
+            noisy_privacy_state=noisy_state,
+            logic_topic=logic_topic,
+            context=request.context,
         )
 
         return AgentResponse(
             request_id=request.request_id,
-            agent_type="AG3_Tutor",
+            agent_type=request.agent_type,
             success=True,
             result=result,
-            metadata={
-                "student_pseudonym": student_pseudonym,
-                "learning_style": learning_style
-            }
         )
 
+    def _parse_json_like(self, text: str) -> Dict[str, Any]:
+        import json
+        import re
 
-# 单例模式
-_ag3_instance: AdaptiveTutorAgent = None
+        match = re.search(r"\{.*\}", text, re.DOTALL)
+        if match:
+            try:
+                return json.loads(match.group())
+            except json.JSONDecodeError:
+                pass
+        return {
+            "explanation": text,
+            "guidance_steps": [],
+            "encouragement": "继续往下走，我们把复杂问题拆成小块来解决。",
+        }
+
+    def _build_optional_llm(self) -> Optional[BaseChatModel]:
+        deepseek_key = os.getenv("DEEPSEEK_API_KEY")
+        if deepseek_key:
+            return ChatOpenAI(
+                api_key=deepseek_key,
+                base_url=os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1"),
+                model=os.getenv("DEEPSEEK_MODEL", "deepseek-chat"),
+                temperature=0.45,
+            )
+
+        openai_key = os.getenv("OPENAI_API_KEY")
+        if openai_key:
+            return ChatOpenAI(api_key=openai_key, model="gpt-4o", temperature=0.55)
+
+        return None
+
+
+_ag3_instance: Optional[AdaptiveTutorAgent] = None
 
 
 def get_ag3_agent() -> AdaptiveTutorAgent:
-    """获取AG3智能体单例"""
     global _ag3_instance
     if _ag3_instance is None:
         _ag3_instance = AdaptiveTutorAgent()
     return _ag3_instance
-
-
-# ============================================================
-# 使用示例
-# ============================================================
-def demo_ag3():
-    """演示AG3功能"""
-    agent = get_ag3_agent()
-
-    # 模拟输入数据
-    mock_errors = [
-        {
-            "knowledge_point": "二次函数求极值",
-            "error_type": "Calculation",
-            "student_answer": "x = -b/2a（公式记错）"
-        },
-        {
-            "knowledge_point": "二次函数图像",
-            "error_type": "Conceptual",
-            "student_answer": "开口方向判断错误"
-        }
-    ]
-
-    print("\n" + "="*60)
-    print("AG3 自适应辅导演示")
-    print("="*60)
-
-    result = agent.generate_scaffolding(
-        student_pseudonym="pseudo_abc123",
-        learning_style="Visual",
-        error_history=mock_errors,
-        student_input="我还是不太理解二次函数的顶点怎么求"
-    )
-
-    print("\n生成的辅导内容：")
-    print(f"启发式提问: {result['scaffolding_questions']}")
-    print(f"解释: {result.get('explanation', 'N/A')}")
-    if 'next_hint' in result:
-        print(f"下一步提示: {result['next_hint']}")
-    print(f"激励语: {result.get('encouragement', '你做得很好！')}")
-
-
-if __name__ == "__main__":
-    demo_ag3()

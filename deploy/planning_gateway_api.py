@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from gateway.assessment_gateway import compat_router as assessment_compat_router
 from gateway.assessment_gateway import router as assessment_router
 from gateway.fedgnn_gateway import router as fedgnn_router
+from gateway.governance_gateway import router as governance_router
 from gateway.planning_gateway import router as planning_router
 from gateway.privacy_lab_gateway import compat_router as privacy_compat_router
 from gateway.privacy_lab_gateway import router as privacy_router
@@ -45,6 +46,7 @@ app.include_router(tutoring_compat_router)
 app.include_router(assessment_router)
 app.include_router(assessment_compat_router)
 app.include_router(fedgnn_router)
+app.include_router(governance_router)
 app.include_router(privacy_router)
 app.include_router(privacy_compat_router)
 app.include_router(teacher_router)

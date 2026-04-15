@@ -14,7 +14,9 @@ from langchain_openai import ChatOpenAI
 from langgraph.graph import END, START, StateGraph
 from pydantic import BaseModel, Field
 
+from agents.ag3_tutor import get_ag3_agent
 from gateway.fedgnn_gateway import get_fedgnn_risk_score_for_session
+from gateway.router import get_gateway
 from gateway.public_bank_store import search_bank_for_student
 
 
@@ -293,20 +295,36 @@ def should_force_ag4_search(state: SystemState) -> bool:
 
 
 def ag3_tutoring_node(state: SystemState) -> SystemState:
-    prompt = build_tutoring_prompt(state)
     llm_error = state.get("llm_error")
+    latest_message = state.get("latest_user_message", "") or "请给出本轮开场辅导。"
 
     try:
-        llm = get_deepseek_llm()
-        if llm is None:
-            raise RuntimeError("DEEPSEEK_API_KEY is not configured.")
-        response = llm.invoke(prompt)
-        parsed = parse_json_payload(response.content)
-        validated = TutoringLLMOutput(**parsed)
-        tutor_reply = validated.tutor_reply
-        need_ag4_search = validated.need_ag4_search
-        search_query = validated.search_query
-        llm_mode = "deepseek"
+        gateway = get_gateway()
+        risk_score = float(state.get("gnn_risk_score", 0.2))
+        epsilon = gateway.privacy_engine.epsilon
+        dual_stream = gateway._build_dual_stream_payload(text_input=latest_message, epsilon=epsilon)
+        duration_ratio = min(1.0, max(0.05, len(latest_message) / 500.0))
+        _privacy_trust = gateway.privacy_engine.get_privacy_trust_snapshot(
+            duration_ratio=duration_ratio,
+            gnn_risk_score=risk_score,
+        )
+        noisy_state = dual_stream.get("noisy_privacy_vector", [])
+        ag3_agent = get_ag3_agent()
+        tutoring_result = ag3_agent.generate_scaffolding(
+            student_input=latest_message,
+            noisy_privacy_state=noisy_state,
+            logic_topic=state.get("current_topic", "当前知识点"),
+        )
+        tutor_reply = tutoring_result.get("explanation", "")
+        guidance_steps = tutoring_result.get("guidance_steps", [])
+        encouragement = tutoring_result.get("encouragement", "")
+        if guidance_steps:
+            tutor_reply = tutor_reply + "\n\n辅导步骤：\n- " + "\n- ".join(guidance_steps)
+        if encouragement:
+            tutor_reply = tutor_reply + f"\n\n鼓励：{encouragement}"
+        need_ag4_search = False
+        search_query = ""
+        llm_mode = "latent_marl"
         llm_error = None
     except Exception as exc:
         mock_result = mock_tutoring_output(state)

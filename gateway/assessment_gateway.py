@@ -11,6 +11,9 @@ from fastapi import APIRouter, HTTPException
 from langchain_openai import ChatOpenAI
 from pydantic import BaseModel, Field
 
+from agents.ag5_assess import get_ag5_agent
+from gateway.router import get_gateway
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 load_dotenv(PROJECT_ROOT / ".env", override=True, encoding="utf-8-sig")
 
@@ -273,7 +276,41 @@ async def assessment_session(request: AssessmentRequest) -> AssessmentResponse:
         raise HTTPException(status_code=404, detail="Assessment session not found. Generate a quiz first.")
 
     quiz = session["quiz"]
-    result = evaluate_answers(quiz, request.answers)
+    try:
+        gateway = get_gateway()
+        ag5_agent = get_ag5_agent()
+        answer_text = " | ".join([f"{qid}:{ans}" for qid, ans in sorted(request.answers.items())]) or "no_answer"
+        dual_stream = gateway._build_dual_stream_payload(
+            text_input=f"{request.current_topic} {answer_text}",
+            epsilon=gateway.privacy_engine.epsilon,
+        )
+        encrypted_logic_vector = ag5_agent.secure_scorer.mock_encrypt(dual_stream["logic_graph_vector"])
+        blind_result = ag5_agent.grade_test(
+            test_spec={"test_id": request.session_id, "questions": quiz},
+            student_answers=request.answers,
+            context={
+                "encrypted_logic_vector": encrypted_logic_vector,
+                "question_id": request.session_id,
+            },
+        )
+        blind_feedback = [
+            question_score.get("feedback", "")
+            for question_score in blind_result.get("question_scores", [])
+            if question_score.get("feedback")
+        ]
+        if blind_result.get("overall_feedback"):
+            blind_feedback.insert(0, blind_result["overall_feedback"])
+        result = {
+            "score": round(float(blind_result["total_score"])),
+            "total": 100,
+            "mastery_level": "high" if blind_result["total_score"] >= 80 else "medium" if blind_result["total_score"] >= 55 else "low",
+            "feedback": blind_feedback or ["已完成盲评估。"],
+            "next_focus": blind_result.get("suggested_next_topics", []),
+        }
+        mode = "blind_evaluation"
+    except Exception:
+        result = evaluate_answers(quiz, request.answers)
+        mode = "evaluation"
     return AssessmentResponse(
         session_id=request.session_id,
         current_phase="Assessment",
@@ -284,6 +321,6 @@ async def assessment_session(request: AssessmentRequest) -> AssessmentResponse:
         feedback=result["feedback"],
         next_focus=result["next_focus"],
         gnn_risk_score=request.gnn_risk_score,
-        llm_mode="evaluation",
+        llm_mode=mode,
         llm_error=None,
     )

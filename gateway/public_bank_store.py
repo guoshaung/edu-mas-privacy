@@ -4,6 +4,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from gateway.governance import compute_copyright_risk
+
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 BANK_PATH = PROJECT_ROOT / "data" / "public_teaching_bank.json"
@@ -128,30 +130,51 @@ def summarize_content(text: str, max_length: int = 80) -> str:
     return clean[: max_length - 1] + "…"
 
 
-def evaluate_student_access(item: dict[str, Any]) -> dict[str, Any]:
+def evaluate_student_access(
+    item: dict[str, Any],
+    requester_role: str = "student",
+    propagation_depth: int = 2,
+    iteration_count: int = 1,
+) -> dict[str, Any]:
     copyright_level = item.get("copyright_level", "school_authorized")
     access_scope = item.get("access_scope", "school")
     allow_fulltext = bool(item.get("allow_fulltext_to_student", False))
     allow_derivative = bool(item.get("allow_derivative_generation", True))
     content = str(item.get("content", "")).strip()
 
-    if allow_fulltext and copyright_level == "public_open":
+    preferred_mode = "fulltext" if allow_fulltext else "substitute_generation" if allow_derivative else "summary"
+    copyright_risk = compute_copyright_risk(
+        resource=item,
+        requester_role=requester_role,
+        propagation_depth=propagation_depth,
+        exposure_mode=preferred_mode,
+        iteration_count=iteration_count,
+    )
+
+    if allow_fulltext and copyright_level == "public_open" and copyright_risk["policy"] == "allow":
         return {
             "decision": "fulltext",
             "reason": "公开资源允许学生直接查看原文。",
             "student_visible_content": content,
             "teacher_policy_hint": "学生可直接查看全文",
+            "copyright_risk": copyright_risk,
         }
 
-    if allow_fulltext and access_scope in {"public", "school", "class"} and copyright_level != "teacher_private":
+    if (
+        allow_fulltext
+        and access_scope in {"public", "school", "class"}
+        and copyright_level != "teacher_private"
+        and copyright_risk["policy"] == "allow"
+    ):
         return {
             "decision": "fulltext",
             "reason": "资源已授权学生查看原文。",
             "student_visible_content": content,
             "teacher_policy_hint": "已授权学生查看全文",
+            "copyright_risk": copyright_risk,
         }
 
-    if allow_derivative:
+    if allow_derivative and copyright_risk["policy"] in {"allow", "summary_or_substitute", "block_or_substitute"}:
         return {
             "decision": "substitute_generation",
             "reason": "不直接开放原文，允许基于知识点生成替代讲解或变式题。",
@@ -160,6 +183,7 @@ def evaluate_student_access(item: dict[str, Any]) -> dict[str, Any]:
                 "AG4 仅向 AG3 提供摘要与变式方向，不回传原始全文。"
             ),
             "teacher_policy_hint": "仅允许摘要与替代生成",
+            "copyright_risk": copyright_risk,
         }
 
     return {
@@ -167,6 +191,7 @@ def evaluate_student_access(item: dict[str, Any]) -> dict[str, Any]:
         "reason": "版权限制较强，仅允许输出最小必要摘要。",
         "student_visible_content": f"授权摘要：{summarize_content(content, 56)}",
         "teacher_policy_hint": "仅允许授权摘要",
+        "copyright_risk": copyright_risk,
     }
 
 

@@ -1,97 +1,223 @@
-﻿# EduMAS Privacy Learning Platform
+# EduMAS Privacy & Copyright-Aware Learning Platform
+
+<div align="center">
 
 ![EduMAS Logo](./docs/assets/edumas-logo.svg)
 
-This project is a multi-agent personalized education system for personalized learning, with privacy protection as a core architectural constraint. It focuses on a student-side local privacy gateway and a server-side multi-agent collaboration pipeline, while keeping the current implementation in a prototype stage with several modules already available and several modules still being expanded.
+<br />
 
-## Project Overview
+![License](https://img.shields.io/badge/License-MIT-f4b400?style=for-the-badge)
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-Privacy%20Gateway-009688?style=for-the-badge&logo=fastapi&logoColor=white)
+![LangGraph](https://img.shields.io/badge/LangGraph-Agent%20Orchestration-6C5CE7?style=for-the-badge)
+![Multi-Agent](https://img.shields.io/badge/Multi--Agent-Education%20MAS-1F2A44?style=for-the-badge)
+![Privacy](https://img.shields.io/badge/Privacy-SRPG%20Dual%20Stream-17A673?style=for-the-badge)
+![Copyright](https://img.shields.io/badge/Copyright-Dynamic%20Compliance-D95C5C?style=for-the-badge)
+![FedGNN](https://img.shields.io/badge/FedGNN-Risk%20Modeling-2F80ED?style=for-the-badge)
 
-The platform is designed around a student learning workflow:
+<br />
 
-- diagnosis
-- planning
-- tutoring
-- assessment
-- psychological support in a future stage
+**A prototype multi-agent personalized education system with privacy and copyright governance built into the architecture**
 
-The current prototype already includes a unified login page, a student function hub, a guided diagnosis workflow, local persona persistence, and several placeholder or evolving student-side learning modules. Teacher and student interfaces are separated, and the local student persona is not directly exposed to the teacher side.
+</div>
 
-## Technologies
+---
 
-- `Python 3.12`: local server entry and backend-side prototyping
-- `http.server`: lightweight local app launch for demo and integration
-- `React`: unified login interface and front-end interaction logic
-- `HTML/CSS/JavaScript`: current teacher and student workspace pages
-- `localStorage`: browser-side persistence for diagnosis results and local persona data
-- `Pydantic`: structured data modeling in Python modules
-- `FastAPI` and related backend libraries: reserved in the project dependencies for API expansion
-- `NumPy`, `Pandas`, `scikit-learn`: data processing and educational modeling support
-- `NetworkX`: graph experimentation support
-- `Opacus`: differential privacy experimentation support
+## Overview
 
-## Functional Scope
+EduMAS is a research-oriented prototype for personalized education. It combines:
 
-Implemented or visible in the current prototype:
+- student-side local interaction and persona storage
+- cloud-side multi-agent orchestration
+- privacy-first data flow control
+- teacher-side copyright-aware resource delivery
 
-- unified login for teacher and student roles
-- student function hub with four major learning modules
-- guided personality and learning diagnosis
-- local persona storage and local visualization
-- teacher-side and student-side page separation
-- privacy-oriented local-first interaction pattern
+The system is organized around a learning workflow:
 
-Planned or partially evolving:
+1. diagnosis
+2. planning
+3. adaptive tutoring
+4. assessment
+5. psychological support (future stage)
 
-- adaptive learning plan generation
-- intelligent tutoring workflow
-- knowledge assessment and feedback loop
-- privacy gateway enforcement between local student data and cloud agents
-- multi-agent orchestration for diagnosis, planning, tutoring, and assessment
-- psychological counseling module for student emotional support
+Unlike a conventional tutoring demo, EduMAS treats **student privacy protection** and **teacher resource copyright protection** as first-class architectural constraints instead of optional afterthoughts.
 
-## Main Entry
+---
 
-Start the project from the repository root:
+## What Makes This Project Different
+
+### Privacy-side method stack
+
+- **SRPG dual-stream protection**
+  splits student input into a logic stream and a privacy stream so that teaching semantics and sensitive student traits can be governed separately.
+
+- **Dynamic privacy trust evaluation**
+  \[
+  T_{p}(t)=\alpha T_{\text{base}}-\beta D_{t}-\gamma R_{\text{gnn}}-\lambda E_{t}
+  \]
+  used to control how much student-side data can be safely released at each stage.
+
+- **FedGNN-backed risk modeling**
+  tracks communication frequency, temporal behavior, payload size, semantic distribution, and gradient summaries to reconstruct normal behavior patterns and produce a live risk score.
+
+### Copyright-side method stack
+
+- copyright-tagged teacher resource ingestion
+- AG4 resource delivery policy control
+- dynamic copyright compliance scoring
+
+\[
+C_{r}(t)=\mu R_{c}+\nu R_{a}+\xi R_{p}+\rho R_{e}+\sigma R_{i}
+\]
+
+This allows the system to decide whether a teacher resource should be:
+
+- delivered as full text
+- returned only as a summary
+- transformed into substitute/generated material
+- fully blocked
+
+### Joint governance layer
+
+Privacy and copyright are scored separately and then fused by a policy layer, enabling decisions such as:
+
+- allow with standard sanitization
+- tighten sanitization
+- summary-only release
+- substitute generation
+- block or minimize release
+
+This makes the project easier to describe as a **governance layer on top of a MAS**, rather than as a collection of unrelated security features.
+
+---
+
+## Current Prototype Scope
+
+### Implemented or demo-ready
+
+- unified login for student and teacher roles
+- student hub, student profile page, privacy lab, SRPG demo page, algorithm showcase page
+- guided diagnosis with local persistence
+- planning gateway and LangGraph state machine
+- adaptive tutoring flow with AG3 latent strategy skeleton
+- assessment flow with AG5 blind-evaluation protocol
+- teacher public question bank management
+- copyright-aware AG4 delivery policy
+- privacy attack demo page
+- governance scoring endpoint and frontend display page
+
+### In progress or planned
+
+- deeper psychological support workflow
+- stronger SRPG parameter tuning and visualization
+- richer teacher document ingestion and formula recognition
+- audit dashboards and experiment logs
+- watermarking / tracing for teacher-side resources
+
+---
+
+## Tech Stack
+
+### Backend and orchestration
+
+- `Python 3.12`
+- `FastAPI`
+- `Pydantic`
+- `LangGraph`
+- `LangChain`
+- `Uvicorn`
+
+### ML, graph, and privacy tooling
+
+- `NumPy`
+- `PyTorch`
+- `scikit-learn`
+- `NetworkX`
+- `Opacus`
+
+### Frontend and interaction
+
+- `React`
+- `HTML / CSS / JavaScript`
+- `localStorage`
+- `MathJax`
+
+---
+
+## Project Structure
+
+```text
+app.py
+├─ login.html / login_app.jsx         # unified entry
+├─ frontend/                          # student pages, teacher pages, demo views
+├─ gateway/                           # privacy gateway, governance scoring, APIs
+├─ agents/                            # AG2~AG5 core agent logic
+├─ protocols/                         # shared protocol definitions
+├─ data/                              # question bank and local demo data
+├─ docs/assets/                       # logo and static assets
+├─ docs/guides/                       # guides and notes
+├─ docs/reports/                      # archived reports
+└─ scripts/maintenance/               # verification and maintenance scripts
+```
+
+---
+
+## Key Pages
+
+After startup, the main demo pages are:
+
+- `http://127.0.0.1:8000/login.html`
+- `http://127.0.0.1:8000/frontend/student_hub.html`
+- `http://127.0.0.1:8000/frontend/student_profile.html`
+- `http://127.0.0.1:8000/frontend/srpg_demo.html`
+- `http://127.0.0.1:8000/frontend/algorithm_showcase.html`
+- `http://127.0.0.1:8000/frontend/privacy_lab.html`
+- `http://127.0.0.1:8000/frontend/teacher_workspace.html`
+- `http://127.0.0.1:8000/frontend/teacher_question_bank.html`
+
+---
+
+## How to Run
+
+### 1. Start the frontend pages
 
 ```bash
 python app.py
 ```
 
-After startup, open:
+Open:
 
 ```text
 http://127.0.0.1:8000/login.html
 ```
 
-The unified login page lets you choose the teacher side or student side.
+### 2. Start the 8010 cloud gateway
 
-## Current Structure
+```bash
+.\.venv\Scripts\python.exe deploy\planning_gateway_api.py
+```
 
-- `app.py`: main local server entry
-- `login.html`: unified login page
-- `login_app.jsx`: React login logic
-- `frontend/`: teacher and student pages
-- `gateway/`: privacy gateway and access-control logic
-- `protocols/`: shared protocol definitions
-- `docs/assets/`: project assets including the logo
-- `docs/guides/`: usage and deployment guides
-- `docs/reports/`: historical reports and completion records
-- `scripts/maintenance/`: helper and verification scripts
+Health endpoint:
 
-## Student Flow
+```text
+http://127.0.0.1:8010/health
+```
 
-- Unified login
-- Student hub
-- Personality diagnosis
-- Learning planning
-- Adaptive tutoring
-- Knowledge assessment
-- Psychological counseling (planned)
-
-The diagnosis page stores the student profile locally in the browser and keeps the local persona separated from the teacher side.
+---
 
 ## Notes
 
-- The root directory has been cleaned to keep only the main entry and core project files.
-- Historical reports and auxiliary scripts were moved instead of being left in the root.
-- Demo-only Python launchers were removed to avoid multiple competing entry points.
+- This is a **research prototype**, not a production-ready commercial deployment.
+- Some flows are fully wired while others remain partially simulated for demonstration and thesis prototyping.
+- The current codebase is already suitable for demo presentations, architecture discussions, and iterative experimentation around privacy governance, copyright governance, and multi-agent educational workflows.
+
+---
+
+## Suggested Next Directions
+
+- add live parameter tuning for SRPG dual-stream demonstrations
+- surface governance scores across more student and teacher views
+- add experiment dashboards for \(T_p(t)\), \(C_r(t)\), and joint policy evolution
+- deepen AG4 tracing and teacher-resource control
+- extend the psychological counseling workflow
+

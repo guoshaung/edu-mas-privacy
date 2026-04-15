@@ -594,8 +594,8 @@
       statusAg4: "\u5df2\u89e6\u53d1 AG4 \u641c\u96c6\u3002",
       statusUpdated: "\u8f85\u5bfc\u56de\u590d\u5df2\u66f4\u65b0\u3002",
       statusCleared: "\u672c\u5730\u8f85\u5bfc\u4f1a\u8bdd\u5df2\u6e05\u7a7a\u3002",
-      restartHint: "\u5982\u679c\u4f60\u521a\u6539\u8fc7\u540e\u7aef\uff0c\u8bf7\u5148\u91cd\u542f 8010 \u7f51\u5173\u3002",
-      apiMissing: "\u672a\u627e\u5230\u53ef\u7528\u7684\u8f85\u5bfc\u63a5\u53e3\uff0c\u8bf7\u91cd\u542f 8010 \u7f51\u5173\u670d\u52a1\u3002",
+      restartHint: "\u5982\u679c\u4f60\u521a\u90e8\u7f72\u6216\u4fee\u6539\u8fc7\u540e\u7aef\uff0c\u8bf7\u5148\u786e\u8ba4\u7edf\u4e00\u670d\u52a1\u5df2\u7ecf\u91cd\u65b0\u542f\u52a8\u3002",
+      apiMissing: "\u672a\u627e\u5230\u53ef\u7528\u7684\u8f85\u5bfc\u63a5\u53e3\uff0c\u8bf7\u68c0\u67e5\u5f53\u524d\u57df\u540d\u4e0b\u7684\u540e\u7aef\u670d\u52a1\u662f\u5426\u6b63\u5e38\u3002",
       companionTitle: "\u53f3\u4e0b\u89d2\u770b\u677f\u5a18",
       companionIdle: "\u770b\u677f\u5a18\u5df2\u5c31\u4f4d\uff0c\u4f1a\u8ddf\u7740 AG3 \u7684\u6700\u65b0\u8f85\u5bfc\u56de\u590d\u64ad\u62a5\u8bed\u97f3\u3002",
       companionFallback: "\u5982\u679c\u6a21\u578b\u672a\u663e\u793a\uff0c\u8bf7\u7a0d\u7b49\u7247\u523b\u6216\u68c0\u67e5\u5916\u7f51 CDN \u662f\u5426\u53ef\u8bbf\u95ee\u3002",
@@ -710,6 +710,18 @@
     const PLANNING_KEY = "eduMasPlanningResult";
     const DIAGNOSIS_KEY = "eduMasDiagnosisResult";
     const SESSION_KEY = "eduMasTutoringSession";
+
+    async function parseJsonSafely(response) {
+      const text = await response.text();
+      if (!text) {
+        return {};
+      }
+      try {
+        return JSON.parse(text);
+      } catch (error) {
+        throw new Error(`服务返回了非 JSON 内容（HTTP ${response.status}）`);
+      }
+    }
 
     document.getElementById("pageTitle").textContent = TEXT.pageTitle;
     document.getElementById("pageSubtitle").textContent = TEXT.pageSubtitle;
@@ -1107,7 +1119,7 @@
             lastError = new Error(`API not found: ${apiUrl}`);
             continue;
           }
-          const result = await response.json();
+          const result = await parseJsonSafely(response);
           if (!response.ok) {
             throw new Error(result.detail || "TTS API failed");
           }
@@ -1268,7 +1280,7 @@
             lastError = new Error(`API not found: ${apiUrl}`);
             continue;
           }
-          const result = await response.json();
+          const result = await parseJsonSafely(response);
           if (!response.ok) {
             throw new Error(result.detail || "Tutoring API failed");
           }

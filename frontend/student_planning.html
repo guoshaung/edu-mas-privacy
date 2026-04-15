@@ -247,6 +247,18 @@
       }
     }
 
+    async function parseJsonSafely(response) {
+      const text = await response.text();
+      if (!text) {
+        return {};
+      }
+      try {
+        return JSON.parse(text);
+      } catch (error) {
+        throw new Error(`服务返回了非 JSON 内容（HTTP ${response.status}）`);
+      }
+    }
+
     async function generatePlan() {
       const payload = buildPayload();
       requestStatus.className = "status";
@@ -259,7 +271,7 @@
           body: JSON.stringify(payload)
         });
 
-        const result = await response.json();
+        const result = await parseJsonSafely(response);
         if (!response.ok) {
           throw new Error(result.detail || "学习规划生成失败。");
         }
@@ -270,7 +282,7 @@
         renderPlan(result);
       } catch (error) {
         requestStatus.className = "status error";
-        requestStatus.textContent = `调用失败：${error.message}。请先启动 8010 端口的规划网关服务。`;
+        requestStatus.textContent = `调用失败：${error.message}。请确认统一服务已经启动，或检查 Render 日志。`;
       }
     }
 

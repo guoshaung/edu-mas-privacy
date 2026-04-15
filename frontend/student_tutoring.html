@@ -629,13 +629,13 @@
     };
 
     const API_CANDIDATES = [
-      "http://127.0.0.1:8010/chat/tutoring",
-      "http://127.0.0.1:8010/api/chat/tutoring",
-      "http://127.0.0.1:8010/api/tutoring"
+      `${window.location.origin}/chat/tutoring`,
+      `${window.location.origin}/api/chat/tutoring`,
+      `${window.location.origin}/api/tutoring`
     ];
     const TTS_API_CANDIDATES = [
-      "http://127.0.0.1:8010/tts/speak",
-      "http://127.0.0.1:8010/api/tts/speak"
+      `${window.location.origin}/tts/speak`,
+      `${window.location.origin}/api/tts/speak`
     ];
     const TTS_VOICE_OPTIONS = [
       { value: "xiaoyan", label: "\u8baf\u98de\u5c0f\u71d5" },

@@ -612,7 +612,7 @@
     async function loadGovernanceOverview() {
       try {
         governanceState.textContent = "正在读取 8010 网关的治理样例…";
-        const response = await fetch("http://127.0.0.1:8010/governance/overview");
+        const response = await fetch(`${window.location.origin}/governance/overview`);
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }

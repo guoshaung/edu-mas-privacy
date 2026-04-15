@@ -146,7 +146,7 @@
 
     async function loadMonitor() {
       try {
-        monitorData = await fetch('http://127.0.0.1:8010/teacher/agent-monitor').then((r) => r.json());
+        monitorData = await fetch(`${window.location.origin}/teacher/agent-monitor`).then((r) => r.json());
       } catch (error) {
         monitorData = { session_count: 0, sessions: [] };
       }

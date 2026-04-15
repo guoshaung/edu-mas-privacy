@@ -117,7 +117,7 @@
   <script>
     async function loadSummary() {
       try {
-        const summary = await fetch('http://127.0.0.1:8010/teacher/summary').then((r) => r.json());
+        const summary = await fetch(`${window.location.origin}/teacher/summary`).then((r) => r.json());
         document.getElementById('activeSessions').textContent = summary.active_sessions;
         document.getElementById('resourceCount').textContent = summary.resource_count;
         document.getElementById('ag4ReadyCount').textContent = summary.ag4_ready_count;
@@ -130,7 +130,7 @@
     async function loadRecentBank() {
       const tbody = document.getElementById('recentBankRows');
       try {
-        const data = await fetch('http://127.0.0.1:8010/teacher/question-bank').then((r) => r.json());
+        const data = await fetch(`${window.location.origin}/teacher/question-bank`).then((r) => r.json());
         tbody.innerHTML = data.items.slice(0, 5).map((item) => `
           <tr>
             <td>${item.title}</td>

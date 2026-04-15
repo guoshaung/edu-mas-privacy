@@ -175,9 +175,9 @@
     };
 
     const API_CANDIDATES = [
-      "http://127.0.0.1:8010/assessment/session",
-      "http://127.0.0.1:8010/api/assessment/session",
-      "http://127.0.0.1:8010/api/session/assessment"
+      `${window.location.origin}/assessment/session`,
+      `${window.location.origin}/api/assessment/session`,
+      `${window.location.origin}/api/session/assessment`
     ];
     const PLANNING_KEY = "eduMasPlanningResult";
     const DIAGNOSIS_KEY = "eduMasDiagnosisResult";

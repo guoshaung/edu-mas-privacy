@@ -463,7 +463,7 @@
       <div class="section-head">
         <div>
           <h2>后端实时样例分数</h2>
-          <div class="muted">这部分直接从 8010 网关的治理接口读取，不再是页面硬编码。</div>
+          <div class="muted">这部分直接从当前部署域名下的治理接口读取，不再依赖本地固定端口。</div>
         </div>
         <div class="load-state" id="governanceLoadState">正在加载治理样例…</div>
       </div>
@@ -611,12 +611,13 @@
 
     async function loadGovernanceOverview() {
       try {
-        governanceState.textContent = "正在读取 8010 网关的治理样例…";
+        governanceState.textContent = "正在读取当前服务下的治理样例…";
         const response = await fetch(`${window.location.origin}/governance/overview`);
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
-        const data = await response.json();
+        const text = await response.text();
+        const data = text ? JSON.parse(text) : {};
         const privacy = data.privacy_trust || {};
         const copyright = data.copyright_risk || {};
         const joint = data.joint_policy || {};
@@ -678,7 +679,7 @@
         governanceState.textContent = `治理样例加载失败：${error.message}`;
         governanceState.className = "load-state error";
         heroJointLabel.textContent = "接口未连接";
-        heroJointText.textContent = "请先启动 8010 网关服务，再刷新本页。";
+        heroJointText.textContent = "请确认统一服务已经部署成功，并检查 Render 日志后再刷新本页。";
       }
     }
 

@@ -473,6 +473,18 @@
       `${window.location.origin}/api/privacy/attack-demo`
     ];
 
+    async function parseJsonSafely(response) {
+      const text = await response.text();
+      if (!text) {
+        return {};
+      }
+      try {
+        return JSON.parse(text);
+      } catch (error) {
+        throw new Error(`服务返回了非 JSON 内容（HTTP ${response.status}）`);
+      }
+    }
+
     const attackConfigs = {
       prompt_injection: {
         label: "提示注入攻击",
@@ -598,7 +610,7 @@
             lastError = new Error(`API not found: ${apiUrl}`);
             continue;
           }
-          const result = await response.json();
+          const result = await parseJsonSafely(response);
           if (!response.ok) {
             throw new Error(result.detail || "Privacy demo API failed");
           }
@@ -620,7 +632,7 @@
       } catch (error) {
         const hint = error.message.includes("/api/privacy/")
           ? "兼容地址不可用，但主地址通常仍可用。请刷新页面后重试。"
-          : "如果你刚改过后端，请先重启 8010 网关。";
+          : "请确认统一服务已经部署成功，或查看 Render 日志确认后端是否正常。";
         setStatus(`执行失败：${error.message}。${hint}`, "error");
       } finally {
         runAttackBtn.disabled = false;

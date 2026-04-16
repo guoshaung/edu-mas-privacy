@@ -308,11 +308,13 @@ def ag3_tutoring_node(state: SystemState) -> SystemState:
             duration_ratio=duration_ratio,
             gnn_risk_score=risk_score,
         )
-        noisy_state = dual_stream.get("noisy_privacy_vector", [])
+        noisy_logic_state = dual_stream.get("noisy_logic_vector", [])
+        privacy_profile_state = dual_stream.get("privacy_profile_vector", [])
         ag3_agent = get_ag3_agent()
         tutoring_result = ag3_agent.generate_scaffolding(
             student_input=latest_message,
-            noisy_privacy_state=noisy_state,
+            noisy_logic_state=noisy_logic_state,
+            privacy_profile_state=privacy_profile_state,
             logic_topic=state.get("current_topic", "当前知识点"),
         )
         tutor_reply = tutoring_result.get("explanation", "")

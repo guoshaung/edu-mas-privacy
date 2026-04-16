@@ -1,10 +1,10 @@
 """
 AG5 评估智能体
 
-本版本重构重点：
-1. 抛弃“大模型直接给分”的单点评分方式。
-2. 引入基于同态加密模拟的盲评估协议（Blind Evaluation）。
-3. 引入价值网络 AG5ValueNet，为后续 Latent MARL 做价值估计。
+当前版本重点：
+1. 使用差分隐私后的逻辑流作为主评估输入。
+2. 支持基于模拟同态加密的盲评估协议。
+3. 提供 AG5ValueNet，供 AG3 / AG5 隐空间博弈使用。
 """
 
 from __future__ import annotations
@@ -29,21 +29,21 @@ class AG5ValueNet(nn.Module):
     AG5 价值网络
 
     输入：
-    - 64 维学生加噪隐私态
+    - 128 维差分隐私逻辑流
     - 32 维 AG3 策略向量
 
     输出：
-    - 一个 0~1 之间的 sigmoid 值，表示“在该策略下通过测试的概率”
+    - 一个 0~1 之间的 sigmoid 值，表示在该策略下通过测试的概率
     """
 
-    def __init__(self, input_dim: int = 64 + 32):
+    def __init__(self, input_dim: int = 128 + 32):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Linear(input_dim, 96),
+            nn.Linear(input_dim, 128),
             nn.ReLU(),
-            nn.Linear(96, 48),
+            nn.Linear(128, 64),
             nn.ReLU(),
-            nn.Linear(48, 1),
+            nn.Linear(64, 1),
             nn.Sigmoid(),
         )
 
@@ -52,6 +52,12 @@ class AG5ValueNet(nn.Module):
             student_state = student_state.unsqueeze(0)
         if tutor_strategy.dim() == 1:
             tutor_strategy = tutor_strategy.unsqueeze(0)
+
+        if student_state.shape[-1] > 128:
+            student_state = student_state[..., :128]
+        elif student_state.shape[-1] < 128:
+            student_state = torch.nn.functional.pad(student_state, (0, 128 - student_state.shape[-1]))
+
         features = torch.cat([student_state, tutor_strategy], dim=-1)
         return self.net(features)
 
@@ -60,7 +66,7 @@ class SecureSMPCScorer:
     """
     模拟 Paillier 同态加密的盲评估器。
 
-    这里不追求真实密码学安全性，而是为了 Demo 场景展示：
+    这里不追求真实密码学安全性，而是用于 Demo 场景展示：
     - 学生逻辑流以“密文态”进入 AG5
     - AG5 在不暴露标准答案图谱的前提下完成相似度评估
     """
@@ -76,14 +82,11 @@ class SecureSMPCScorer:
         print("[SMPC] 已将学生逻辑流封装为密文态向量（Demo 偏移加密）")
         return encrypted.tolist()
 
-    def mock_homomorphic_dot_product(self, encrypted_vec: List[float] | np.ndarray, plain_vec: List[float] | np.ndarray) -> float:
-        """
-        在不对外暴露明文逻辑向量的情况下，模拟密文态相似度计算。
-
-        对外表现：
-        - 只暴露一个 0~1 之间的分数
-        - 打印“标准答案图谱未暴露”的日志
-        """
+    def mock_homomorphic_dot_product(
+        self,
+        encrypted_vec: List[float] | np.ndarray,
+        plain_vec: List[float] | np.ndarray,
+    ) -> float:
         print("[SMPC] 接收到加密逻辑流，开始盲计算")
         encrypted_np = np.asarray(encrypted_vec, dtype=np.float32)
         plain_np = np.asarray(plain_vec, dtype=np.float32)
@@ -97,9 +100,6 @@ class SecureSMPCScorer:
         return normalized
 
     def build_reference_answer_vector(self, question_id: str) -> List[float]:
-        """
-        用题目 ID 稳定生成 128 维标准答案向量，模拟本地题库中的标准图谱。
-        """
         digest = hashlib.sha256(f"reference:{question_id}".encode("utf-8")).hexdigest()
         seed = int(digest[:16], 16) % (2**32)
         rng = np.random.default_rng(seed)
@@ -118,11 +118,6 @@ class SecureSMPCScorer:
 class AssessmentAgent:
     """
     AG5 评估智能体
-
-    当前职责：
-    - 生成测验题
-    - 接收“加密逻辑流”并执行盲评估
-    - 通过 SecureSMPCScorer 输出 0~1 分数
     """
 
     def __init__(self, llm: Optional[BaseChatModel] = None):
@@ -137,7 +132,10 @@ class AssessmentAgent:
                     "你是 AG5_AssessmentAgent。你只负责根据知识点、难度和题型独立出题，"
                     "不能引用 AG3 的辅导上下文。请输出 JSON。",
                 ),
-                ("human", "知识点：{knowledge_points}\n难度：{difficulty}\n题数：{num_questions}\n题型：{question_type}"),
+                (
+                    "human",
+                    "知识点：{knowledge_points}\n难度：{difficulty}\n题数：{num_questions}\n题型：{question_type}",
+                ),
             ]
         )
 
@@ -187,12 +185,6 @@ class AssessmentAgent:
         student_answers: Dict[str, str],
         context: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, Any]:
-        """
-        兼容旧接口。
-
-        如果上下文里已经带有 encrypted_logic_vector，就走盲评估协议；
-        否则退化为规则评估，避免旧链路直接崩掉。
-        """
         encrypted_logic_vector = None
         question_id = test_spec.get("test_id", "default_question")
 
@@ -262,10 +254,10 @@ class AssessmentAgent:
 
         match = re.search(r"\{.*\}", text, re.DOTALL)
         if match:
-          try:
-              return json.loads(match.group())
-          except json.JSONDecodeError:
-              return {}
+            try:
+                return json.loads(match.group())
+            except json.JSONDecodeError:
+                return {}
         return {}
 
     def _build_optional_llm(self) -> Optional[BaseChatModel]:
@@ -284,7 +276,13 @@ class AssessmentAgent:
 
         return None
 
-    def _generate_fallback_test(self, test_id: str, knowledge_points: List[str], difficulty: float, num_questions: int) -> Dict[str, Any]:
+    def _generate_fallback_test(
+        self,
+        test_id: str,
+        knowledge_points: List[str],
+        difficulty: float,
+        num_questions: int,
+    ) -> Dict[str, Any]:
         questions = []
         points = knowledge_points or ["矩阵基础"]
         for idx in range(num_questions):

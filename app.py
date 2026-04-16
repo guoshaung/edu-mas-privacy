@@ -38,9 +38,6 @@ def _ensure_runtime() -> None:
         )
 
 
-_ensure_runtime()
-
-import uvicorn  # noqa: E402
 from fastapi.responses import RedirectResponse  # noqa: E402
 from fastapi.staticfiles import StaticFiles  # noqa: E402
 
@@ -58,6 +55,9 @@ app.mount("/", StaticFiles(directory=str(ROOT_DIR), html=False), name="static")
 
 
 def run() -> None:
+    _ensure_runtime()
+    import uvicorn
+
     print(f"EduMAS unified service is available at: http://{HOST}:{PORT}/login.html")
     print("Serving frontend pages and API gateway from a single process.")
     uvicorn.run("app:app", host=HOST, port=PORT, reload=False)

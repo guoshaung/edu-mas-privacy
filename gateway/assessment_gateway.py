@@ -284,7 +284,7 @@ async def assessment_session(request: AssessmentRequest) -> AssessmentResponse:
             text_input=f"{request.current_topic} {answer_text}",
             epsilon=gateway.privacy_engine.epsilon,
         )
-        encrypted_logic_vector = ag5_agent.secure_scorer.mock_encrypt(dual_stream["logic_graph_vector"])
+        encrypted_logic_vector = ag5_agent.secure_scorer.mock_encrypt(dual_stream["noisy_logic_vector"])
         blind_result = ag5_agent.grade_test(
             test_spec={"test_id": request.session_id, "questions": quiz},
             student_answers=request.answers,

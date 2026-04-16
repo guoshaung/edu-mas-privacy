@@ -1,14 +1,11 @@
 """
 SRPG / Privacy Engine
 
-这个模块负责在零信任架构下对学生原始输入做双流处理：
-1. 传统 protect 接口：兼容当前项目里已有的 SRPGEngine.protect 调用。
-2. 新增 process_dual_stream_vector：将文本输入映射为“逻辑流图谱向量 + 隐私流向量”。
-
-这里的实现偏工程 Demo：
-- 逻辑流用高维向量模拟“图谱/语义编码”
-- 隐私流用局部差分隐私（LDP）方式加噪
-- 输出结构可直接被网关、AG3、AG5 后续模块消费
+这个模块负责在零信任架构下，对学生原始输入执行双流处理。
+当前版本采用新的主次关系：
+1. 逻辑流是主流，承载教学任务语义。
+2. 差分隐私后的逻辑流是 AG3 / AG5 的主输入。
+3. 隐私流退居为辅助流，只提供个性化调节所需的画像摘要。
 """
 
 from __future__ import annotations
@@ -27,7 +24,7 @@ from protocols.messages import LearnerData, ProtectedFeatures
 
 
 class LatentReconstructionHead(nn.Module):
-    """轻量重构头，兼容旧版 protect 流程。"""
+    """兼容旧版 protect 流程的轻量重构头。"""
 
     def __init__(self, input_dim: int = 64, hidden_dim: int = 128, output_dim: int = 32):
         super().__init__()
@@ -98,14 +95,24 @@ class SRPGEngine:
             values = values[:64]
         return values / (torch.norm(values) + 1e-8)
 
-    def _add_laplace_noise_tensor(self, data: torch.Tensor, epsilon: Optional[float] = None, sensitivity: float = 1.0) -> torch.Tensor:
+    def _add_laplace_noise_tensor(
+        self,
+        data: torch.Tensor,
+        epsilon: Optional[float] = None,
+        sensitivity: float = 1.0,
+    ) -> torch.Tensor:
         current_epsilon = float(epsilon if epsilon is not None else self.epsilon)
         safe_epsilon = max(current_epsilon, 1e-4)
         scale = sensitivity / safe_epsilon
         noise = torch.distributions.Laplace(0.0, scale).sample(data.shape).to(data.device)
         return data + noise
 
-    def _add_laplace_noise_numpy(self, vector: np.ndarray, epsilon: Optional[float] = None, sensitivity: float = 1.0) -> np.ndarray:
+    def _add_laplace_noise_numpy(
+        self,
+        vector: np.ndarray,
+        epsilon: Optional[float] = None,
+        sensitivity: float = 1.0,
+    ) -> np.ndarray:
         current_epsilon = float(epsilon if epsilon is not None else self.epsilon)
         safe_epsilon = max(current_epsilon, 1e-4)
         scale = sensitivity / safe_epsilon
@@ -119,31 +126,46 @@ class SRPGEngine:
 
     def process_dual_stream_vector(self, text_input: str, epsilon: Optional[float] = None) -> Dict[str, List[float]]:
         """
-        对文本输入做“双流向量化处理”。
+        对文本输入做双流隐空间处理。
 
-        处理流程：
-        1. 模拟 GCN/图编码：将文本映射为 128 维逻辑流向量。
-        2. 模拟 LDP 隐私流：生成 64 维隐私流向量，并注入拉普拉斯噪声。
-        3. 返回可直接传输的列表结构。
+        新的主次关系如下：
+        1. 主逻辑流：保留教学语义，是 AG3 / AG5 的主输入。
+        2. 差分隐私逻辑流：对主逻辑流加噪后形成可共享版本。
+        3. 辅助隐私流：保留个性化教学提示，但不再主导语义理解。
 
-        这里代表的是“零信任架构下的隐空间特征提取与 LDP 加噪”：
-        - 逻辑流保留任务语义，服务后续规划/辅导/检索
-        - 隐私流保留个体特征摘要，但在本地先做差分隐私扰动
+        这里代表“零信任架构下的隐空间特征提取与 LDP 加噪”：
+        - 主逻辑流保证任务可用性
+        - 辅助隐私流用于个性化调节
         """
         used_epsilon = float(epsilon if epsilon is not None else self.epsilon)
 
-        # 第一步：模拟高维逻辑流图谱编码
+        # 第一步：将文本映射为 128 维逻辑图谱向量。
         logic_rng = np.random.default_rng(self._seed_from_text(text_input, "logic"))
         logic_graph_vector = logic_rng.normal(loc=0.0, scale=1.0, size=128).astype(np.float32)
 
-        # 第二步：模拟 64 维隐私流，并注入拉普拉斯噪声
+        # 第二步：对逻辑流做 LDP 加噪。这个结果将作为 AG3 / AG5 的主输入。
+        noisy_logic_vector = self._add_laplace_noise_numpy(
+            logic_graph_vector,
+            epsilon=used_epsilon,
+        ).astype(np.float32)
+
+        # 第三步：生成 64 维隐私辅助流，并做更保守的噪声处理。
         privacy_rng = np.random.default_rng(self._seed_from_text(text_input, "privacy"))
-        privacy_vector = privacy_rng.normal(loc=0.0, scale=1.0, size=64).astype(np.float32)
-        noisy_privacy_vector = self._add_laplace_noise_numpy(privacy_vector, epsilon=used_epsilon).astype(np.float32)
+        privacy_profile_vector = privacy_rng.normal(loc=0.0, scale=1.0, size=64).astype(np.float32)
+        noisy_privacy_profile = self._add_laplace_noise_numpy(
+            privacy_profile_vector,
+            epsilon=max(0.1, used_epsilon * 0.75),
+        ).astype(np.float32)
 
         return {
-            "noisy_privacy_vector": noisy_privacy_vector.tolist(),
+            # 原始逻辑流仅用于本地展示或内部调试，不建议直接下发。
             "logic_graph_vector": logic_graph_vector.tolist(),
+            # AG3 / AG5 共享的主逻辑流。
+            "noisy_logic_vector": noisy_logic_vector.tolist(),
+            # AG3 可额外使用的辅助隐私流。
+            "privacy_profile_vector": noisy_privacy_profile.tolist(),
+            # 兼容旧字段，避免旧展示页或旧链路直接失效。
+            "noisy_privacy_vector": noisy_privacy_profile.tolist(),
         }
 
     def protect(self, learner_data: LearnerData, accessed_fields: Optional[List[str]] = None) -> Tuple[ProtectedFeatures, float]:
@@ -190,7 +212,6 @@ class SRPGEngine:
     ) -> Dict[str, Any]:
         """
         真正落地的动态隐私信任计算入口。
-
         - T_base 由 self.privacy_trust_config.t_base 提供
         - D_t 由外部传入 duration_ratio
         - R_gnn 由外部传入 gnn_risk_score
@@ -225,7 +246,6 @@ class SRPGEngine:
         self.exposure_tracker.reset()
 
 
-# 给用户请求中的命名一个兼容别名，避免外部按 PrivacyEngine 寻址时报错
 PrivacyEngine = SRPGEngine
 
 _engine_instance: Optional[SRPGEngine] = None

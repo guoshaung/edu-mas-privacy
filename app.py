@@ -6,19 +6,9 @@ import sys
 import traceback
 from pathlib import Path
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, RedirectResponse
-from fastapi.staticfiles import StaticFiles
-
-
 ROOT_DIR = Path(__file__).resolve().parent
 HOST = os.getenv("HOST", "0.0.0.0")
 PORT = int(os.getenv("PORT", "8000"))
-
-
-class UTF8JSONResponse(JSONResponse):
-    media_type = "application/json; charset=utf-8"
 
 
 def _venv_python() -> Path:
@@ -35,6 +25,8 @@ def _ensure_runtime() -> None:
     try:
         import uvicorn  # noqa: F401
         import fastapi  # noqa: F401
+        import dotenv  # noqa: F401
+        import langchain_openai  # noqa: F401
     except ModuleNotFoundError:
         venv_python = _venv_python()
         if venv_python.exists() and not _running_inside_venv():
@@ -46,6 +38,18 @@ def _ensure_runtime() -> None:
             "Required dependencies are missing. Please install requirements or run with the project virtual environment:\n"
             r".\.venv\Scripts\python.exe app.py"
         )
+
+
+_ensure_runtime()
+
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
+
+
+class UTF8JSONResponse(JSONResponse):
+    media_type = "application/json; charset=utf-8"
 
 
 app = FastAPI(
